@@ -1,0 +1,11 @@
+# lokal admin/review araçları — public deploy'a girmesin
+review.html
+curate.html
+images/incoming/
+images.bak/
+images.json.bak
+
+.env
+.env.*
+!.env.example
+node_modules/

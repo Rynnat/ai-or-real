@@ -1,0 +1,3264 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a0f">
+<title>AI or Real</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+/* box-shadow spread animation için — @property ile smooth interpolation */
+@property --glow-mul {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 1;
+}
+
+:root {
+  --bg: #0a0a0f;
+  --bg-elevated: #14141c;
+  --fg: #e8e8f0;
+  --fg-muted: #6a6a7a;
+  --accent: #00ff88;
+  --accent-rgb: 0, 255, 136;
+  --accent-dim: #00cc6a;
+  --danger: #ff3860;
+  --success: var(--accent);
+  --gold: #ffd23f;
+  --border: #2a2a3a;
+  --font-mono: 'JetBrains Mono', 'Space Mono', ui-monospace, monospace;
+  --transition: 200ms;
+}
+
+/* ============ TEMALAR ============ */
+body.theme-apple {
+  --accent: #00ff88;
+  --accent-rgb: 0, 255, 136;
+  --accent-dim: #00cc6a;
+}
+body.theme-grape {
+  --accent: #b675ff;
+  --accent-rgb: 182, 117, 255;
+  --accent-dim: #9355d6;
+}
+body.theme-cherry {
+  --accent: #ff4565;
+  --accent-rgb: 255, 69, 101;
+  --accent-dim: #d62e4d;
+}
+body.theme-blueberry {
+  --accent: #4a8cff;
+  --accent-rgb: 74, 140, 255;
+  --accent-dim: #2e6fd6;
+}
+body.theme-lemon {
+  --accent: #ffe04a;
+  --accent-rgb: 255, 224, 74;
+  --accent-dim: #d6b82e;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-weight: 400;
+  overscroll-behavior: none;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  padding: 32px 48px;
+  opacity: 0;
+  transition: opacity var(--transition) ease;
+}
+
+.screen.active {
+  display: flex;
+  opacity: 1;
+}
+
+/* ================= WELCOME ================= */
+#welcome {
+  align-items: center;
+  justify-content: center;
+}
+
+.welcome-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 64px;
+  width: 100%;
+  max-width: 1000px;
+}
+.welcome-left, .welcome-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+}
+
+.btn-endless {
+  background: transparent;
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 5px;
+  padding: 18px 48px;
+  min-height: 64px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: transform var(--transition), background var(--transition), color var(--transition), box-shadow var(--transition);
+}
+.btn-endless:active {
+  transform: scale(0.97);
+  background: var(--accent);
+  color: var(--bg);
+  box-shadow: 0 0 24px rgba(var(--accent-rgb), 0.5);
+}
+.btn-endless .infinity {
+  font-size: 24px;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+/* mobil scoreboard toggle — kenar chevron butonları */
+.edge-toggle {
+  display: none;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 38px; height: 70px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 22px;
+  font-weight: 800;
+  cursor: pointer;
+  z-index: 50;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 16px rgba(var(--accent-rgb), 0.3);
+  transition: transform var(--transition);
+}
+.edge-toggle:active { transform: translateY(-50%) scale(0.92); }
+.edge-toggle.right { right: 0; border-right: none; border-radius: 8px 0 0 8px; }
+.edge-toggle.left  { left: 0;  border-left:  none; border-radius: 0 8px 8px 0; }
+
+@media (max-width: 720px) {
+  #welcome {
+    overflow: hidden;
+    padding: 32px 0;
+    align-items: flex-start;  /* center yapınca 200% wide grid taşıyordu */
+  }
+  .welcome-grid {
+    grid-template-columns: 1fr 1fr;
+    width: 200%;
+    max-width: none;
+    gap: 0;
+    height: 100%;
+    transition: transform 320ms cubic-bezier(.22,1,.36,1);
+  }
+  .welcome-left, .welcome-right {
+    display: flex;
+    width: 100%;
+    padding: 0 32px;
+    justify-content: center;
+  }
+  #welcome.board-shown .welcome-grid { transform: translateX(-50%); }
+
+  .edge-toggle.right { display: flex; }
+  .edge-toggle.left  { display: none; }
+  #welcome.board-shown .edge-toggle.right { display: none; }
+  #welcome.board-shown .edge-toggle.left  { display: flex; }
+}
+
+.logo {
+  font-size: clamp(48px, 12vw, 96px);
+  font-weight: 800;
+  letter-spacing: -2px;
+  color: var(--accent);
+  text-shadow: 0 0 0.25em rgba(var(--accent-rgb), 0.35);
+  line-height: 1;
+}
+
+.logo .or {
+  color: var(--fg);
+  font-weight: 400;
+  opacity: 0.55;
+  font-size: 0.66em;
+}
+
+.tagline {
+  font-size: 14px;
+  color: var(--fg-muted);
+  letter-spacing: 6px;
+  text-transform: uppercase;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  padding: 24px 72px;
+  font-family: var(--font-mono);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 6px;
+  cursor: pointer;
+  min-height: 80px;
+  border-radius: 4px;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.btn-primary:active {
+  transform: scale(0.97);
+  box-shadow: 0 0 32px rgba(var(--accent-rgb), 0.55);
+}
+
+.leaderboard-mini {
+  margin-top: 8px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 20px 32px;
+  min-width: 340px;
+}
+
+.leaderboard-mini h3 {
+  font-size: 12px;
+  color: var(--fg-muted);
+  letter-spacing: 6px;
+  text-align: center;
+  margin-bottom: 14px;
+  text-transform: uppercase;
+}
+
+.leaderboard-mini .row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 18px;
+  padding: 5px 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.leaderboard-mini .rank { color: var(--accent); width: 32px; }
+.leaderboard-mini .name { flex: 1; letter-spacing: 6px; color: var(--fg); }
+.leaderboard-mini .score { color: var(--fg); }
+
+/* ================= GAME ================= */
+#game {
+  padding: 24px 32px;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 4:3 playfield: ekran ne kadar geniş olursa olsun
+   stage 4/3 oranda kalır, yan boşluklar koyu kalır */
+.game-frame {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: min(1100px, calc((100dvh - 240px) * 4 / 3));
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  justify-content: center;
+}
+
+/* Mobil portrait: stage tüm dikey alanı doldursun, max-width yok */
+@media (orientation: portrait) and (max-width: 720px) {
+  .game-frame {
+    max-width: 100%;
+  }
+  .image-stage {
+    aspect-ratio: auto;
+    flex: 1 1 0;
+    min-height: 0;
+  }
+  .btn-choice {
+    font-size: 18px;
+    letter-spacing: 3px;
+    min-height: 80px;
+    padding: 0 4px;
+  }
+  .hud {
+    margin-bottom: 4px;
+  }
+  .timer { font-size: clamp(40px, 12vw, 56px); }
+  .score-display .value { font-size: clamp(24px, 7vw, 32px); }
+  .stats-grid {
+    gap: 14px;
+    max-width: 100%;
+  }
+  .stat-value { font-size: clamp(22px, 6vw, 32px); }
+  .stat-label { font-size: 9px; letter-spacing: 3px; }
+  .name-box { width: 64px; height: 80px; font-size: 40px; padding: 0 0 0 16px; letter-spacing: 12px; }
+  .final-score { font-size: clamp(64px, 22vw, 120px); }
+}
+
+.hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  width: 100%;
+}
+
+.timer {
+  font-size: 64px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: -2px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  transition: color 150ms;
+}
+
+.timer.low {
+  color: var(--danger);
+  animation: pulse 800ms ease-in-out infinite;
+}
+
+.timer .unit {
+  font-size: 18px;
+  color: var(--fg-muted);
+  letter-spacing: 4px;
+  margin-left: 8px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+/* lives — sonsuz modu için */
+.lives {
+  display: none;
+  align-items: flex-end;
+  font-size: 56px;
+  letter-spacing: 12px;
+  color: var(--danger);
+  line-height: 1;
+  text-shadow: 0 0 0.3em rgba(255, 56, 96, 0.6);
+}
+.lives span.lost {
+  opacity: 0.18;
+  text-shadow: none;
+}
+#game.mode-endless .timer { display: none; }
+#game.mode-endless .lives { display: flex; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+.score-display { text-align: right; }
+.score-display .label {
+  color: var(--fg-muted);
+  font-size: 12px;
+  letter-spacing: 6px;
+  display: block;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.score-display .value {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.image-stage {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  container-type: inline-size;  /* cqi → stage genişliğine göre ölçek */
+  transition: box-shadow 500ms ease, border-color 500ms ease;
+}
+
+/* ============ FIRE / COMBO TIER VISUAL ============ */
+/* Tek bir generic keyframe: --glow-mul'u 1 ↔ 1.25 arası salınır.
+   Tüm spread değerleri buna çarpılır → image hiç dokunulmadan halka nabız atar.
+   `filter` ve `translate` kullanılmıyor — image kayıtsız & sabit. */
+.image-stage { --glow-mul: 1; }
+
+.image-stage[data-tier="2"] {
+  box-shadow:
+    0 0 calc(28px * var(--glow-mul)) rgba(var(--accent-rgb), 0.5),
+    0 0 calc(12px * var(--glow-mul)) rgba(var(--accent-rgb), 0.3);
+}
+.image-stage[data-tier="4"] {
+  box-shadow:
+    0 0 calc(42px * var(--glow-mul)) rgba(var(--accent-rgb), 0.7),
+    0 0 calc(20px * var(--glow-mul)) rgba(var(--accent-rgb), 0.45);
+  border-color: rgba(var(--accent-rgb), 0.55);
+}
+.image-stage[data-tier="8"] {
+  box-shadow:
+    0 0 calc(56px * var(--glow-mul)) rgba(255, 200, 60, 0.85),
+    0 0 calc(28px * var(--glow-mul)) rgba(255, 170, 50, 0.6);
+  border-color: rgba(255, 200, 60, 0.8);
+  animation: glowBreathe 1.7s ease-in-out infinite;
+}
+.image-stage[data-tier="16"] {
+  box-shadow:
+    0 0 calc(72px * var(--glow-mul)) rgba(255, 130, 40, 0.95),
+    0 0 calc(40px * var(--glow-mul)) rgba(255, 90, 25, 0.75);
+  border-color: rgba(255, 130, 40, 0.95);
+  animation: glowBreathe 1.3s ease-in-out infinite;
+}
+.image-stage[data-tier="32"] {
+  box-shadow:
+    0 0 calc(96px * var(--glow-mul)) rgba(255, 80, 20, 1),
+    0 0 calc(52px * var(--glow-mul)) rgba(255, 50, 10, 0.85),
+    0 0 calc(22px * var(--glow-mul)) rgba(255, 20, 0, 0.7);
+  border-color: rgba(255, 80, 20, 1);
+  animation: glowBreathe 0.9s ease-in-out infinite;
+}
+.image-stage[data-tier="64"] {
+  box-shadow:
+    0 0 calc(128px * var(--glow-mul)) rgba(255, 40, 5, 1),
+    0 0 calc(72px * var(--glow-mul)) rgba(255, 20, 0, 0.95),
+    0 0 calc(36px * var(--glow-mul)) rgba(255, 0, 0, 0.85);
+  border-color: rgba(255, 40, 5, 1);
+  animation: glowBreathe 0.6s ease-in-out infinite;
+}
+.image-stage[data-tier="128"] {
+  box-shadow:
+    0 0 calc(160px * var(--glow-mul)) rgba(255, 30, 0, 1),
+    0 0 calc(100px * var(--glow-mul)) rgba(255, 80, 0, 0.95),
+    0 0 calc(56px  * var(--glow-mul)) rgba(255, 200, 0, 0.9),
+    0 0 calc(24px  * var(--glow-mul)) rgba(255, 255, 100, 0.7);
+  border-color: rgba(255, 200, 0, 1);
+  animation: glowBreathe 0.45s ease-in-out infinite;
+}
+.image-stage[data-tier="256"] {
+  box-shadow:
+    0 0 calc(200px * var(--glow-mul)) rgba(180, 230, 255, 1),
+    0 0 calc(120px * var(--glow-mul)) rgba(255, 255, 255, 0.95),
+    0 0 calc(60px  * var(--glow-mul)) rgba(255, 150, 50, 0.85),
+    0 0 calc(24px  * var(--glow-mul)) rgba(255, 255, 200, 0.8);
+  border-color: rgba(220, 240, 255, 1);
+  animation: glowBreathe 0.4s ease-in-out infinite;
+}
+.image-stage[data-tier="512"] {
+  box-shadow:
+    0 0 calc(240px * var(--glow-mul)) rgba(220, 100, 255, 1),
+    0 0 calc(140px * var(--glow-mul)) rgba(150, 220, 255, 0.95),
+    0 0 calc(80px  * var(--glow-mul)) rgba(255, 100, 255, 0.9),
+    0 0 calc(36px  * var(--glow-mul)) rgba(255, 255, 255, 0.8);
+  border-color: rgba(255, 150, 255, 1);
+  animation: glowBreathe 0.35s ease-in-out infinite;
+}
+.image-stage[data-tier="1024"] {
+  box-shadow:
+    0 0 calc(320px * var(--glow-mul)) rgba(255, 255, 255, 1),
+    0 0 calc(200px * var(--glow-mul)) rgba(255, 100, 200, 1),
+    0 0 calc(120px * var(--glow-mul)) rgba(100, 200, 255, 1),
+    0 0 calc(60px  * var(--glow-mul)) rgba(255, 255, 0, 1),
+    0 0 calc(24px  * var(--glow-mul)) rgba(255, 255, 255, 1);
+  border-color: #fff;
+  animation: glowBreathe 0.3s ease-in-out infinite;
+}
+.image-stage[data-tier="2048"] {
+  box-shadow:
+    0 0 calc(380px * var(--glow-mul)) rgba(180, 60, 255, 1),
+    0 0 calc(240px * var(--glow-mul)) rgba(100, 80, 255, 1),
+    0 0 calc(140px * var(--glow-mul)) rgba(255, 100, 220, 0.95),
+    0 0 calc(80px  * var(--glow-mul)) rgba(0, 220, 255, 0.9),
+    0 0 calc(36px  * var(--glow-mul)) rgba(255, 100, 255, 1);
+  border-color: rgba(180, 80, 255, 1);
+  animation: glowBreathe 0.25s ease-in-out infinite;
+}
+.image-stage[data-tier="4096"] {
+  box-shadow:
+    0 0 calc(440px * var(--glow-mul)) rgba(255, 255, 255, 1),
+    0 0 calc(280px * var(--glow-mul)) rgba(255, 80, 255, 1),
+    0 0 calc(180px * var(--glow-mul)) rgba(0, 255, 255, 1),
+    0 0 calc(100px * var(--glow-mul)) rgba(255, 220, 0, 1),
+    0 0 calc(50px  * var(--glow-mul)) rgba(255, 100, 100, 1),
+    0 0 calc(20px  * var(--glow-mul)) rgba(255, 255, 255, 1);
+  border-color: #fff;
+  animation: glowBreathe 0.2s ease-in-out infinite;
+}
+.image-stage[data-tier="8192"] {
+  box-shadow:
+    0 0 calc(520px * var(--glow-mul)) rgba(255, 255, 255, 1),
+    0 0 calc(340px * var(--glow-mul)) rgba(150, 60, 255, 1),
+    0 0 calc(210px * var(--glow-mul)) rgba(0, 255, 200, 1),
+    0 0 calc(120px * var(--glow-mul)) rgba(255, 150, 0, 1),
+    0 0 calc(60px  * var(--glow-mul)) rgba(255, 100, 100, 1),
+    0 0 calc(22px  * var(--glow-mul)) #fff;
+  border-color: #fff;
+  animation: glowBreathe 0.17s ease-in-out infinite;
+}
+.image-stage[data-tier="16384"] {
+  box-shadow:
+    0 0 calc(600px * var(--glow-mul)) rgba(255, 255, 255, 1),
+    0 0 calc(400px * var(--glow-mul)) rgba(255, 80, 200, 1),
+    0 0 calc(250px * var(--glow-mul)) rgba(100, 220, 255, 1),
+    0 0 calc(140px * var(--glow-mul)) rgba(255, 220, 100, 1),
+    0 0 calc(70px  * var(--glow-mul)) rgba(180, 255, 100, 1),
+    0 0 calc(24px  * var(--glow-mul)) #fff;
+  border-color: #fff;
+  animation: glowBreathe 0.15s ease-in-out infinite;
+}
+.image-stage[data-tier="32768"] {
+  box-shadow:
+    0 0 calc(680px * var(--glow-mul)) rgba(255, 255, 255, 1),
+    0 0 calc(460px * var(--glow-mul)) rgba(180, 60, 255, 1),
+    0 0 calc(290px * var(--glow-mul)) rgba(0, 255, 255, 1),
+    0 0 calc(160px * var(--glow-mul)) rgba(255, 180, 0, 1),
+    0 0 calc(80px  * var(--glow-mul)) rgba(255, 80, 180, 1),
+    0 0 calc(26px  * var(--glow-mul)) #fff;
+  border-color: #fff;
+  animation: glowBreathe 0.13s ease-in-out infinite;
+}
+.image-stage[data-tier="65536"] {
+  box-shadow:
+    0 0 calc(760px * var(--glow-mul)) rgba(255, 255, 255, 1),
+    0 0 calc(520px * var(--glow-mul)) rgba(255, 0, 200, 1),
+    0 0 calc(340px * var(--glow-mul)) rgba(0, 200, 255, 1),
+    0 0 calc(190px * var(--glow-mul)) rgba(255, 200, 0, 1),
+    0 0 calc(95px  * var(--glow-mul)) rgba(255, 100, 100, 1),
+    0 0 calc(28px  * var(--glow-mul)) #fff;
+  border-color: #fff;
+  animation: glowBreathe 0.12s ease-in-out infinite;
+}
+.image-stage[data-tier="131072"] {
+  box-shadow:
+    0 0 calc(840px * var(--glow-mul)) rgba(255, 255, 255, 1),
+    0 0 calc(580px * var(--glow-mul)) rgba(255, 50, 255, 1),
+    0 0 calc(390px * var(--glow-mul)) rgba(100, 255, 200, 1),
+    0 0 calc(220px * var(--glow-mul)) rgba(255, 220, 0, 1),
+    0 0 calc(110px * var(--glow-mul)) rgba(255, 120, 60, 1),
+    0 0 calc(30px  * var(--glow-mul)) #fff;
+  border-color: #fff;
+  animation: glowBreathe 0.11s ease-in-out infinite;
+}
+.image-stage[data-tier="262144"] {
+  box-shadow:
+    0 0 calc(940px * var(--glow-mul)) rgba(255, 255, 255, 1),
+    0 0 calc(640px * var(--glow-mul)) rgba(255, 80, 255, 1),
+    0 0 calc(440px * var(--glow-mul)) rgba(64, 255, 255, 1),
+    0 0 calc(250px * var(--glow-mul)) rgba(255, 80, 80, 1),
+    0 0 calc(130px * var(--glow-mul)) rgba(255, 220, 0, 1),
+    0 0 calc(32px  * var(--glow-mul)) #fff;
+  border-color: #fff;
+  animation: glowBreathe 0.1s ease-in-out infinite;
+}
+
+@keyframes glowBreathe {
+  0%, 100% { --glow-mul: 1; }
+  50%      { --glow-mul: 1.28; }
+}
+
+/* Butonlar tier'a göre yanar — sahneyle bağlı görünsün */
+.game-frame { --glow-mul: 1; }
+.game-frame[data-tier="2"] .btn-choice {
+  border-color: rgba(var(--accent-rgb), 0.45);
+  box-shadow: 0 0 calc(12px * var(--glow-mul)) rgba(var(--accent-rgb), 0.3);
+}
+.game-frame[data-tier="4"] .btn-choice {
+  border-color: rgba(var(--accent-rgb), 0.6);
+  box-shadow: 0 0 calc(16px * var(--glow-mul)) rgba(var(--accent-rgb), 0.4);
+}
+.game-frame[data-tier="8"] .btn-choice {
+  border-color: rgba(255, 200, 60, 0.65);
+  box-shadow: 0 0 calc(20px * var(--glow-mul)) rgba(255, 200, 60, 0.5);
+  animation: glowBreathe 1.7s ease-in-out infinite;
+}
+.game-frame[data-tier="16"] .btn-choice {
+  border-color: rgba(255, 130, 40, 0.75);
+  box-shadow: 0 0 calc(28px * var(--glow-mul)) rgba(255, 130, 40, 0.6);
+  animation: glowBreathe 1.3s ease-in-out infinite;
+}
+.game-frame[data-tier="32"] .btn-choice {
+  border-color: rgba(255, 80, 20, 0.9);
+  box-shadow: 0 0 calc(36px * var(--glow-mul)) rgba(255, 80, 20, 0.7);
+  animation: glowBreathe 0.9s ease-in-out infinite;
+}
+.game-frame[data-tier="64"] .btn-choice {
+  border-color: rgba(255, 40, 5, 1);
+  box-shadow: 0 0 calc(48px * var(--glow-mul)) rgba(255, 40, 5, 0.8), 0 0 calc(20px * var(--glow-mul)) rgba(255, 100, 0, 0.6);
+  animation: glowBreathe 0.6s ease-in-out infinite;
+}
+.game-frame[data-tier="128"] .btn-choice {
+  border-color: rgba(255, 200, 0, 1);
+  box-shadow: 0 0 calc(60px * var(--glow-mul)) rgba(255, 100, 0, 0.85), 0 0 calc(28px * var(--glow-mul)) rgba(255, 200, 0, 0.7);
+  animation: glowBreathe 0.45s ease-in-out infinite;
+}
+.game-frame[data-tier="256"] .btn-choice {
+  border-color: rgba(220, 240, 255, 1);
+  box-shadow: 0 0 calc(72px * var(--glow-mul)) rgba(180, 230, 255, 0.9), 0 0 calc(32px * var(--glow-mul)) rgba(255, 255, 255, 0.75);
+  animation: glowBreathe 0.4s ease-in-out infinite;
+}
+.game-frame[data-tier="512"] .btn-choice {
+  border-color: rgba(255, 150, 255, 1);
+  box-shadow: 0 0 calc(84px * var(--glow-mul)) rgba(220, 100, 255, 0.92), 0 0 calc(36px * var(--glow-mul)) rgba(255, 100, 255, 0.75);
+  animation: glowBreathe 0.35s ease-in-out infinite;
+}
+.game-frame[data-tier="1024"] .btn-choice {
+  border-color: #fff;
+  box-shadow: 0 0 calc(96px * var(--glow-mul)) rgba(255, 100, 200, 0.95), 0 0 calc(48px * var(--glow-mul)) rgba(100, 200, 255, 0.85), 0 0 calc(20px * var(--glow-mul)) #fff;
+  animation: glowBreathe 0.3s ease-in-out infinite;
+}
+.game-frame[data-tier="2048"] .btn-choice {
+  border-color: rgba(180, 80, 255, 1);
+  box-shadow: 0 0 calc(112px * var(--glow-mul)) rgba(180, 60, 255, 0.95), 0 0 calc(56px * var(--glow-mul)) rgba(0, 220, 255, 0.8), 0 0 calc(24px * var(--glow-mul)) rgba(255, 100, 220, 0.85);
+  animation: glowBreathe 0.25s ease-in-out infinite;
+}
+.game-frame[data-tier="4096"] .btn-choice {
+  border-color: #fff;
+  box-shadow: 0 0 calc(140px * var(--glow-mul)) rgba(255, 80, 255, 1), 0 0 calc(70px * var(--glow-mul)) rgba(0, 255, 255, 0.95), 0 0 calc(32px * var(--glow-mul)) rgba(255, 220, 0, 0.9), 0 0 10px #fff;
+  animation: glowBreathe 0.2s ease-in-out infinite;
+}
+.game-frame[data-tier="8192"]   .btn-choice { border-color: #fff; box-shadow: 0 0 calc(160px * var(--glow-mul)) rgba(150, 60, 255, 1), 0 0 calc(80px * var(--glow-mul)) rgba(0, 255, 200, 0.95), 0 0 calc(36px * var(--glow-mul)) rgba(255, 150, 0, 0.9), 0 0 10px #fff; animation: glowBreathe 0.17s ease-in-out infinite; }
+.game-frame[data-tier="16384"]  .btn-choice { border-color: #fff; box-shadow: 0 0 calc(180px * var(--glow-mul)) rgba(255, 80, 200, 1), 0 0 calc(90px * var(--glow-mul)) rgba(100, 220, 255, 0.95), 0 0 calc(40px * var(--glow-mul)) rgba(255, 220, 100, 0.9), 0 0 12px #fff; animation: glowBreathe 0.15s ease-in-out infinite; }
+.game-frame[data-tier="32768"]  .btn-choice { border-color: #fff; box-shadow: 0 0 calc(200px * var(--glow-mul)) rgba(180, 60, 255, 1), 0 0 calc(100px * var(--glow-mul)) rgba(0, 255, 255, 0.95), 0 0 calc(44px * var(--glow-mul)) rgba(255, 180, 0, 0.9), 0 0 12px #fff; animation: glowBreathe 0.13s ease-in-out infinite; }
+.game-frame[data-tier="65536"]  .btn-choice { border-color: #fff; box-shadow: 0 0 calc(220px * var(--glow-mul)) rgba(255, 0, 200, 1), 0 0 calc(110px * var(--glow-mul)) rgba(0, 200, 255, 0.95), 0 0 calc(48px * var(--glow-mul)) rgba(255, 200, 0, 0.9), 0 0 14px #fff; animation: glowBreathe 0.12s ease-in-out infinite; }
+.game-frame[data-tier="131072"] .btn-choice { border-color: #fff; box-shadow: 0 0 calc(240px * var(--glow-mul)) rgba(255, 50, 255, 1), 0 0 calc(120px * var(--glow-mul)) rgba(100, 255, 200, 0.95), 0 0 calc(52px * var(--glow-mul)) rgba(255, 220, 0, 0.9), 0 0 14px #fff; animation: glowBreathe 0.11s ease-in-out infinite; }
+.game-frame[data-tier="262144"] .btn-choice { border-color: #fff; box-shadow: 0 0 calc(260px * var(--glow-mul)) rgba(255, 80, 255, 1), 0 0 calc(130px * var(--glow-mul)) rgba(64, 255, 255, 0.95), 0 0 calc(56px * var(--glow-mul)) rgba(255, 80, 80, 0.9), 0 0 16px #fff; animation: glowBreathe 0.1s ease-in-out infinite; }
+
+.image-stage img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: opacity 150ms ease;
+}
+
+.image-stage.shake {
+  animation: shake 320ms cubic-bezier(.36,.07,.19,.97);
+}
+
+@keyframes shake {
+  10%, 90% { transform: translateX(-4px); }
+  20%, 80% { transform: translateX(6px); }
+  30%, 50%, 70% { transform: translateX(-8px); }
+  40%, 60% { transform: translateX(8px); }
+}
+
+/* combo badge — sağ üst */
+.combo-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: var(--accent);
+  color: var(--bg);
+  font-family: var(--font-mono);
+  font-size: clamp(22px, 5.5cqi, 36px);
+  font-weight: 800;
+  letter-spacing: -1px;
+  padding: 6px 18px;
+  border-radius: 6px;
+  opacity: 0;
+  transform: scale(0.4);
+  transition: opacity 200ms, transform 200ms, box-shadow 400ms, background 400ms, color 400ms;
+  pointer-events: none;
+  box-shadow: 0 0 28px rgba(var(--accent-rgb), 0.55);
+  z-index: 3;
+}
+.combo-badge.shown { opacity: 1; transform: scale(1); }
+.combo-badge.bump  { animation: comboBump 480ms cubic-bezier(.22,1,.36,1); }
+
+/* tier yangını — kutuda da */
+.combo-badge[data-tier="4"]  { box-shadow: 0 0 42px rgba(var(--accent-rgb), 0.8), 0 0 18px rgba(var(--accent-rgb), 0.5); }
+.combo-badge[data-tier="8"] {
+  background: linear-gradient(135deg, #ffd23f, #ff9040);
+  color: #1a0a00;
+  box-shadow: 0 0 52px rgba(255, 200, 60, 0.9), 0 0 24px rgba(255, 160, 50, 0.65);
+  animation: comboPulse 1.7s ease-in-out infinite;
+}
+.combo-badge[data-tier="16"] {
+  background: linear-gradient(135deg, #ff9040, #ff5020);
+  color: #1a0a00;
+  box-shadow: 0 0 64px rgba(255, 100, 30, 0.95), 0 0 30px rgba(255, 70, 15, 0.75), 0 0 12px rgba(255, 40, 0, 0.55);
+  animation: comboPulse 1.3s ease-in-out infinite;
+}
+.combo-badge[data-tier="32"] {
+  background: linear-gradient(135deg, #ff5020, #ff2010);
+  color: #1a0a00;
+  box-shadow: 0 0 80px rgba(255, 60, 10, 1), 0 0 38px rgba(255, 30, 0, 0.85), 0 0 16px rgba(255, 0, 0, 0.7);
+  animation: comboPulse 0.9s ease-in-out infinite, comboFlicker 0.22s steps(2) infinite;
+}
+.combo-badge[data-tier="64"] {
+  background: linear-gradient(135deg, #ff2010, #ff0000 50%, #ffaa00);
+  color: #fff;
+  box-shadow: 0 0 100px rgba(255, 30, 0, 1), 0 0 52px rgba(255, 0, 0, 0.95), 0 0 24px rgba(255, 80, 0, 0.85), 0 0 8px #fff;
+  animation: comboPulse 0.6s ease-in-out infinite, comboFlicker 0.16s steps(2) infinite;
+}
+.combo-badge[data-tier="128"] {
+  background: linear-gradient(135deg, #fff 0%, #ffea00 18%, #ff8000 45%, #ff0000 75%, #800000);
+  color: #fff;
+  text-shadow: 0 0 0.3em #fff, 0 0 0.6em #ffea00;
+  box-shadow:
+    0 0 140px rgba(255, 30, 0, 1),
+    0 0 80px rgba(255, 100, 0, 0.95),
+    0 0 40px rgba(255, 200, 0, 0.85),
+    0 0 16px rgba(255, 255, 100, 0.75),
+    0 0 4px #fff;
+  animation: comboPulse 0.45s ease-in-out infinite, comboFlicker 0.12s steps(2) infinite, comboShift 1.8s linear infinite;
+}
+.combo-badge[data-tier="256"] {
+  background: linear-gradient(135deg, #fff 0%, #d4eeff 30%, #66c3ff 60%, #0080ff 100%);
+  color: #001830;
+  text-shadow: 0 0 0.3em #fff, 0 0 0.6em #88d0ff;
+  box-shadow:
+    0 0 180px rgba(100, 200, 255, 1),
+    0 0 100px rgba(255, 255, 255, 0.95),
+    0 0 50px rgba(255, 200, 100, 0.75),
+    0 0 8px #fff;
+  animation: comboStarPulse 0.4s ease-in-out infinite, comboFlicker 0.1s steps(2) infinite;
+}
+.combo-badge[data-tier="512"] {
+  background: linear-gradient(135deg, #ff00ff 0%, #ff80ff 25%, #c080ff 55%, #80c0ff 85%, #00ffff);
+  background-size: 200% 200%;
+  color: #fff;
+  text-shadow: 0 0 0.3em #fff, 0 0 0.5em #ff80ff;
+  box-shadow:
+    0 0 220px rgba(255, 0, 255, 1),
+    0 0 130px rgba(150, 100, 255, 0.95),
+    0 0 70px rgba(100, 200, 255, 0.9),
+    0 0 8px #fff;
+  animation: comboPlasma 1.0s linear infinite, comboFlicker 0.09s steps(2) infinite, comboShift 1.4s linear infinite;
+}
+.combo-badge[data-tier="1024"] {
+  background: linear-gradient(135deg, #fff 0%, #ff00ff 18%, #ff8000 36%, #ffff00 54%, #00ff80 72%, #00ffff 90%, #fff);
+  background-size: 300% 300%;
+  color: #fff;
+  text-shadow: 0 0 0.4em #fff, 0 0 0.7em #fff, 0 0 1em rgba(255, 255, 255, 0.9);
+  box-shadow:
+    0 0 280px rgba(255, 255, 255, 1),
+    0 0 170px rgba(255, 0, 255, 1),
+    0 0 100px rgba(100, 255, 200, 1),
+    0 0 50px rgba(255, 255, 100, 1),
+    0 0 8px #fff;
+  animation: comboCosmic 0.5s linear infinite, comboShift 0.8s linear infinite, comboFlicker 0.08s steps(2) infinite;
+}
+.combo-badge[data-tier="2048"] {
+  background: linear-gradient(135deg, #fff 0%, #b864ff 18%, #4080ff 45%, #00ddff 70%, #ff64b8);
+  background-size: 250% 250%;
+  color: #fff;
+  text-shadow: 0 0 0.4em #fff, 0 0 0.7em #b864ff;
+  box-shadow:
+    0 0 240px rgba(180, 60, 255, 1),
+    0 0 140px rgba(100, 80, 255, 1),
+    0 0 80px rgba(0, 220, 255, 0.95),
+    0 0 36px rgba(255, 100, 220, 0.9),
+    0 0 12px #fff;
+  animation: comboCosmic 0.4s linear infinite, comboShift 0.7s linear infinite, comboFlicker 0.07s steps(2) infinite;
+}
+.combo-badge[data-tier="4096"] {
+  background: linear-gradient(135deg, #fff 0%, #fff 8%, #ff64ff 22%, #ffea64 38%, #64ff64 54%, #64ffff 70%, #ff64b8 86%, #fff);
+  background-size: 400% 400%;
+  color: #fff;
+  text-shadow: 0 0 0.5em #fff, 0 0 0.8em #fff, 0 0 1.2em #ff64ff;
+  box-shadow:
+    0 0 320px rgba(255, 255, 255, 1),
+    0 0 200px rgba(255, 80, 255, 1),
+    0 0 130px rgba(100, 255, 200, 1),
+    0 0 80px rgba(255, 220, 0, 1),
+    0 0 40px rgba(0, 255, 255, 1),
+    0 0 14px #fff;
+  animation: comboCosmic 0.3s linear infinite, comboShift 0.5s linear infinite, comboFlicker 0.06s steps(2) infinite;
+}
+.combo-badge[data-tier="8192"],
+.combo-badge[data-tier="16384"],
+.combo-badge[data-tier="32768"],
+.combo-badge[data-tier="65536"],
+.combo-badge[data-tier="131072"],
+.combo-badge[data-tier="262144"] {
+  background: linear-gradient(135deg, #fff 0%, #ff80ff 14%, #ffea64 28%, #64ff64 42%, #64ffff 56%, #ff80c8 70%, #fff 84%, #ff80ff);
+  background-size: 500% 500%;
+  color: #fff;
+  text-shadow: 0 0 0.5em #fff, 0 0 0.9em #fff, 0 0 1.3em #ff64ff;
+  animation: comboCosmic 0.25s linear infinite, comboShift 0.4s linear infinite, comboFlicker 0.05s steps(2) infinite;
+}
+.combo-badge[data-tier="8192"]   { box-shadow: 0 0 360px rgba(255, 255, 255, 1), 0 0 220px rgba(150, 60, 255, 1), 0 0 140px rgba(0, 255, 200, 1), 0 0 80px rgba(255, 150, 0, 1), 0 0 36px rgba(255, 100, 100, 1), 0 0 14px #fff; }
+.combo-badge[data-tier="16384"]  { box-shadow: 0 0 400px rgba(255, 255, 255, 1), 0 0 240px rgba(255, 80, 200, 1), 0 0 160px rgba(100, 220, 255, 1), 0 0 90px rgba(255, 220, 100, 1), 0 0 40px rgba(180, 255, 100, 1), 0 0 16px #fff; }
+.combo-badge[data-tier="32768"]  { box-shadow: 0 0 440px rgba(255, 255, 255, 1), 0 0 260px rgba(180, 60, 255, 1), 0 0 180px rgba(0, 255, 255, 1), 0 0 100px rgba(255, 180, 0, 1), 0 0 44px rgba(255, 80, 180, 1), 0 0 18px #fff; }
+.combo-badge[data-tier="65536"]  { box-shadow: 0 0 480px rgba(255, 255, 255, 1), 0 0 290px rgba(255, 0, 200, 1), 0 0 200px rgba(0, 200, 255, 1), 0 0 110px rgba(255, 200, 0, 1), 0 0 48px rgba(255, 100, 100, 1), 0 0 20px #fff; animation: comboCosmic 0.2s linear infinite, comboShift 0.35s linear infinite, comboFlicker 0.04s steps(2) infinite; }
+.combo-badge[data-tier="131072"] { box-shadow: 0 0 520px rgba(255, 255, 255, 1), 0 0 320px rgba(255, 50, 255, 1), 0 0 220px rgba(100, 255, 200, 1), 0 0 120px rgba(255, 220, 0, 1), 0 0 52px rgba(255, 120, 60, 1), 0 0 22px #fff; animation: comboCosmic 0.18s linear infinite, comboShift 0.3s linear infinite, comboFlicker 0.04s steps(2) infinite; }
+.combo-badge[data-tier="262144"] { box-shadow: 0 0 560px rgba(255, 255, 255, 1), 0 0 360px rgba(255, 80, 255, 1), 0 0 240px rgba(64, 255, 255, 1), 0 0 140px rgba(255, 80, 80, 1), 0 0 64px rgba(255, 220, 0, 1), 0 0 24px #fff; animation: comboCosmic 0.16s linear infinite, comboShift 0.25s linear infinite, comboFlicker 0.04s steps(2) infinite; }
+
+@keyframes comboPulse {
+  0%, 100% { transform: scale(1) translateY(0); filter: brightness(1); }
+  50%      { transform: scale(1.12) translateY(-3px); filter: brightness(1.25); }
+}
+@keyframes comboFlicker {
+  0%   { filter: brightness(1) hue-rotate(0deg); }
+  100% { filter: brightness(1.1) hue-rotate(-10deg); }
+}
+@keyframes comboShift {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+@keyframes comboStarPulse {
+  0%, 100% { transform: scale(1) translateY(0); filter: brightness(1.1) saturate(1.2); }
+  50%      { transform: scale(1.15) translateY(-3px); filter: brightness(1.4) saturate(1.4); }
+}
+@keyframes comboPlasma {
+  0%   { transform: scale(1) translateY(0); filter: brightness(1.15) hue-rotate(0deg); }
+  50%  { transform: scale(1.12) translateY(-3px); filter: brightness(1.35) hue-rotate(180deg); }
+  100% { transform: scale(1) translateY(0); filter: brightness(1.15) hue-rotate(360deg); }
+}
+@keyframes comboCosmic {
+  0%   { transform: scale(1) translateY(0); filter: brightness(1.3) saturate(1.5) hue-rotate(0deg); }
+  50%  { transform: scale(1.18) translateY(-4px); filter: brightness(1.55) saturate(1.6) hue-rotate(180deg); }
+  100% { transform: scale(1) translateY(0); filter: brightness(1.3) saturate(1.5) hue-rotate(360deg); }
+}
+@keyframes comboBump {
+  0%   { transform: scale(1) rotate(0); }
+  25%  { transform: scale(1.5) rotate(-6deg); }
+  60%  { transform: scale(1.05) rotate(2deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+.flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 2;
+}
+.flash.flash-correct { animation: flashGreen 420ms ease-out; }
+.flash.flash-wrong   { animation: flashRed   420ms ease-out; }
+
+@keyframes flashGreen {
+  0%   { opacity: 0;    background: var(--success); }
+  20%  { opacity: 0.42; background: var(--success); }
+  100% { opacity: 0;    background: var(--success); }
+}
+@keyframes flashRed {
+  0%   { opacity: 0;   background: var(--danger); }
+  20%  { opacity: 0.5; background: var(--danger); }
+  100% { opacity: 0;   background: var(--danger); }
+}
+
+.score-pop {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-mono);
+  font-size: 112px;
+  font-weight: 800;
+  letter-spacing: -2px;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  /* em-based shadow → font-size büyüdükçe glow da büyür */
+  text-shadow: 0 0 0.28em currentColor, 0 0.02em 0.14em rgba(0,0,0,0.55);
+  animation: scorePop 820ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  z-index: 4;
+  will-change: transform, opacity;
+}
+.score-pop.pop-good { color: var(--success); }
+.score-pop.pop-bad  { color: var(--danger); }
+.score-pop.pop-combo { color: var(--gold); text-shadow: 0 0 32px var(--gold), 0 2px 16px rgba(0,0,0,0.5); }
+
+@keyframes scorePop {
+  0%   { transform: translate(-50%, -40%)  scale(0.5); opacity: 0; }
+  15%  { transform: translate(-50%, -50%)  scale(1.18); opacity: 1; }
+  35%  { transform: translate(-50%, -55%)  scale(1.0);  opacity: 1; }
+  100% { transform: translate(-50%, -120%) scale(0.95); opacity: 0; }
+}
+
+/* tier-up streak banner */
+.streak-banner {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-mono);
+  font-size: clamp(28px, 10cqi, 84px);
+  font-weight: 800;
+  color: var(--gold);
+  letter-spacing: -2px;
+  pointer-events: none;
+  opacity: 0;
+  text-shadow: 0 0 0.4em var(--gold), 0 0 0.8em rgba(255, 210, 63, 0.5);
+  white-space: nowrap;
+  z-index: 5;
+}
+.streak-banner.size-mid       { font-size: clamp(32px, 12cqi, 96px); }
+.streak-banner.size-big       { font-size: clamp(36px, 14cqi, 110px); text-shadow: 0 0 0.5em var(--gold), 0 0 1em rgba(255, 210, 63, 0.7); }
+.streak-banner.size-huge      { font-size: clamp(40px, 16cqi, 130px); text-shadow: 0 0 0.6em var(--gold), 0 0 1.2em rgba(255, 210, 63, 0.85); }
+.streak-banner.size-insane    { font-size: clamp(46px, 18cqi, 145px); color: #ff9040; text-shadow: 0 0 0.6em #ff8030, 0 0 1.3em rgba(255, 100, 30, 0.85); }
+.streak-banner.size-legendary { font-size: clamp(52px, 20cqi, 160px); color: #ff5020; text-shadow: 0 0 0.7em #ff4010, 0 0 1.6em rgba(255, 50, 10, 0.95), 0 0 0.4em #fff; }
+.streak-banner.size-ultimate  { font-size: clamp(60px, 23cqi, 190px); color: #fff;     text-shadow: 0 0 0.3em #fff, 0 0 0.7em #ffea00, 0 0 1.2em #ff6000, 0 0 1.8em rgba(255, 0, 0, 1); }
+.streak-banner.size-godlike   { font-size: clamp(68px, 25cqi, 210px); color: #d4eeff; text-shadow: 0 0 0.3em #fff, 0 0 0.7em #88d0ff, 0 0 1.4em rgba(0, 128, 255, 1); }
+.streak-banner.size-mythic    { font-size: clamp(76px, 27cqi, 230px); color: #ff80ff; text-shadow: 0 0 0.3em #fff, 0 0 0.7em #ff00ff, 0 0 1.4em rgba(150, 0, 255, 1); }
+.streak-banner.size-infinite     { font-size: clamp(86px, 30cqi, 260px); color: #fff;     text-shadow: 0 0 0.3em #fff, 0 0 0.6em #ff00ff, 0 0 1em #00ffff, 0 0 1.5em #ffff00, 0 0 2em #ff0000; }
+.streak-banner.size-transcendent { font-size: clamp(96px, 33cqi, 290px); color: #c898ff; text-shadow: 0 0 0.3em #fff, 0 0 0.7em #b864ff, 0 0 1.4em rgba(180, 60, 255, 1), 0 0 2em rgba(0, 220, 255, 0.8); }
+.streak-banner.size-omega        { font-size: clamp(110px, 36cqi, 320px); color: #fff;    text-shadow: 0 0 0.3em #fff, 0 0 0.6em #ff80ff, 0 0 1em #00ffff, 0 0 1.5em #ffea00, 0 0 2em #ff4040, 0 0 2.5em #fff; }
+.streak-banner.size-8k           { font-size: clamp(120px, 38cqi, 340px); color: #fff;    text-shadow: 0 0 0.3em #fff, 0 0 0.6em #9647ff, 0 0 1.1em #00ffd0, 0 0 1.6em #ff9000, 0 0 2.5em #fff; }
+.streak-banner.size-16k          { font-size: clamp(132px, 40cqi, 360px); color: #fff;    text-shadow: 0 0 0.3em #fff, 0 0 0.7em #ff50d0, 0 0 1.2em #50d0ff, 0 0 1.8em #ffd050, 0 0 2.5em #fff; }
+.streak-banner.size-32k          { font-size: clamp(144px, 42cqi, 380px); color: #fff;    text-shadow: 0 0 0.3em #fff, 0 0 0.7em #b040ff, 0 0 1.2em #00ffff, 0 0 1.8em #ffb000, 0 0 2.5em #fff; }
+.streak-banner.size-64k          { font-size: clamp(156px, 44cqi, 400px); color: #fff;    text-shadow: 0 0 0.3em #fff, 0 0 0.7em #ff00b0, 0 0 1.2em #00b0ff, 0 0 1.8em #ffb000, 0 0 2.5em #fff; }
+.streak-banner.size-128k         { font-size: clamp(168px, 46cqi, 420px); color: #fff;    text-shadow: 0 0 0.3em #fff, 0 0 0.7em #ff30ff, 0 0 1.2em #50ffb0, 0 0 1.8em #ffd000, 0 0 2.5em #fff; }
+.streak-banner.size-256k         { font-size: clamp(180px, 48cqi, 440px); color: #fff;    text-shadow: 0 0 0.3em #fff, 0 0 0.8em #ff80ff, 0 0 1.3em #40ffff, 0 0 1.9em #ff4040, 0 0 3em #fff; }
+.streak-banner.fire { animation: streakBanner 1000ms cubic-bezier(.22,1,.36,1) forwards; }
+@keyframes streakBanner {
+  0%   { transform: translate(-50%, -50%) scale(0.3) rotate(-10deg); opacity: 0; }
+  20%  { transform: translate(-50%, -50%) scale(1.35) rotate(-6deg); opacity: 1; }
+  45%  { transform: translate(-50%, -50%) scale(1.0)  rotate(-2deg); opacity: 1; }
+  100% { transform: translate(-50%, -120%) scale(1.1) rotate(0);     opacity: 0; }
+}
+
+/* debug label — gerçek görseller hazır olunca DEBUG_LABEL=false yap */
+.debug-label {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 210, 63, 0.16);
+  color: var(--gold);
+  border: 1px solid rgba(255, 210, 63, 0.45);
+  padding: 8px 20px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 150ms;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 3;
+  white-space: nowrap;
+}
+.debug-label.shown { opacity: 1; }
+
+/* 3-2-1 countdown */
+.countdown {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 10, 15, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 10;
+  font-family: var(--font-mono);
+}
+.countdown.shown { display: flex; }
+.countdown .num {
+  font-size: clamp(96px, 30cqi, 240px);
+  font-weight: 800;
+  color: var(--accent);
+  text-shadow: 0 0 0.2em rgba(var(--accent-rgb), 0.7);
+  font-variant-numeric: tabular-nums;
+  animation: cdNum 720ms ease-out forwards;
+}
+@keyframes cdNum {
+  0%   { transform: scale(0.4); opacity: 0; }
+  20%  { transform: scale(1.2); opacity: 1; }
+  60%  { transform: scale(1.0); opacity: 1; }
+  100% { transform: scale(0.6); opacity: 0; }
+}
+.countdown .go {
+  font-size: clamp(56px, 18cqi, 140px);
+  font-weight: 800;
+  color: var(--accent);
+  text-shadow: 0 0 0.3em rgba(var(--accent-rgb), 0.8);
+  animation: cdGo 720ms ease-out forwards;
+}
+@keyframes cdGo {
+  0%   { transform: scale(0.4); opacity: 0; letter-spacing: 0; }
+  20%  { transform: scale(1.2); opacity: 1; letter-spacing: 16px; }
+  100% { transform: scale(1.8); opacity: 0; letter-spacing: 40px; }
+}
+
+.choice-row {
+  display: flex;
+  gap: 16px;
+}
+
+.btn-choice {
+  flex: 1;
+  min-height: 96px;
+  background: var(--bg-elevated);
+  color: var(--fg);
+  border: 2px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 6px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: transform var(--transition), border-color var(--transition), color var(--transition), opacity var(--transition);
+}
+
+.btn-choice:active {
+  transform: scale(0.98);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-choice:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* ================= END ================= */
+#end {
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+
+.end-label {
+  font-size: 12px;
+  color: var(--fg-muted);
+  letter-spacing: 6px;
+  text-transform: uppercase;
+}
+
+.final-score {
+  font-size: clamp(72px, 18vh, 144px);
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: -4px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  text-shadow: 0 0 0.22em rgba(var(--accent-rgb), 0.35);
+}
+
+/* ============ VICTORY TIERS ============ */
+.victory-label { display: none; }
+#end[data-vtier] .timeup { display: none; }
+#end[data-vtier] .victory-label {
+  display: block;
+  font-size: clamp(22px, 4vw, 32px);
+  font-weight: 800;
+  letter-spacing: 10px;
+  text-transform: uppercase;
+}
+#end.perfection .timeup,
+#end.perfection .victory-label { display: none; }
+
+/* solid color tiers */
+#end[data-vtier="v_notbad"]      .victory-label { color: var(--fg-muted); }
+#end[data-vtier="v_notbad"]      .final-score   { color: var(--fg-muted); text-shadow: none; }
+#end[data-vtier="v_nice"]        .victory-label { color: var(--accent-dim); }
+#end[data-vtier="v_nice"]        .final-score   { color: var(--accent-dim); }
+#end[data-vtier="v_good"]        .victory-label { color: var(--accent); }
+#end[data-vtier="v_great"]       .victory-label { color: #b8e040; }
+#end[data-vtier="v_great"]       .final-score   { color: #b8e040; text-shadow: 0 0 0.22em rgba(184, 224, 64, 0.4); }
+#end[data-vtier="v_impressive"]  .victory-label { color: var(--gold); text-shadow: 0 0 0.4em rgba(255, 210, 63, 0.5); }
+#end[data-vtier="v_impressive"]  .final-score   { color: var(--gold); text-shadow: 0 0 0.22em rgba(255, 210, 63, 0.55); }
+#end[data-vtier="v_awesome"]     .victory-label { color: #ffae00; text-shadow: 0 0 0.5em rgba(255, 174, 0, 0.55); }
+#end[data-vtier="v_awesome"]     .final-score   { color: #ffae00; text-shadow: 0 0 0.3em rgba(255, 174, 0, 0.6); }
+#end[data-vtier="v_outstanding"] .victory-label { color: #ff8030; text-shadow: 0 0 0.5em rgba(255, 128, 48, 0.65); }
+#end[data-vtier="v_outstanding"] .final-score   { color: #ff8030; text-shadow: 0 0 0.3em rgba(255, 128, 48, 0.75); }
+#end[data-vtier="v_incredible"]  .victory-label { color: #ff5040; text-shadow: 0 0 0.5em rgba(255, 80, 64, 0.75); }
+#end[data-vtier="v_incredible"]  .final-score   { color: #ff5040; text-shadow: 0 0 0.3em rgba(255, 80, 64, 0.85); }
+
+/* gradient tiers */
+#end[data-vtier="v_phenomenal"] .victory-label,
+#end[data-vtier="v_phenomenal"] .final-score,
+#end[data-vtier="v_legendary"]  .victory-label,
+#end[data-vtier="v_legendary"]  .final-score,
+#end[data-vtier="v_mythic"]     .victory-label,
+#end[data-vtier="v_mythic"]     .final-score,
+#end[data-vtier="v_godlike"]    .victory-label,
+#end[data-vtier="v_godlike"]    .final-score {
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+  animation: perfectionShift 2.5s linear infinite;
+}
+#end[data-vtier="v_phenomenal"] .victory-label,
+#end[data-vtier="v_phenomenal"] .final-score {
+  background: linear-gradient(135deg, #ff3060 0%, #ff80b0 50%, #ff3060 100%);
+  background-size: 200% 200%;
+  filter: drop-shadow(0 0 0.25em rgba(255, 48, 96, 0.55));
+}
+#end[data-vtier="v_legendary"] .victory-label,
+#end[data-vtier="v_legendary"] .final-score {
+  background: linear-gradient(135deg, #c060ff 0%, #ff60c0 50%, #c060ff 100%);
+  background-size: 200% 200%;
+  filter: drop-shadow(0 0 0.3em rgba(192, 96, 255, 0.6));
+}
+#end[data-vtier="v_mythic"] .victory-label,
+#end[data-vtier="v_mythic"] .final-score {
+  background: linear-gradient(135deg, #50d0ff 0%, #c060ff 35%, #ff60c0 65%, #50d0ff 100%);
+  background-size: 250% 250%;
+  filter: drop-shadow(0 0 0.3em rgba(192, 96, 255, 0.7));
+  animation: perfectionShift 2s linear infinite;
+}
+#end[data-vtier="v_godlike"] .victory-label,
+#end[data-vtier="v_godlike"] .final-score {
+  background: linear-gradient(135deg, #fff 0%, #ff80c8 25%, #ffea64 50%, #64ffea 75%, #fff 100%);
+  background-size: 300% 300%;
+  filter: drop-shadow(0 0 0.3em rgba(255, 255, 255, 0.7));
+  animation: perfectionShift 1.8s linear infinite;
+}
+
+/* ============ PERFECTION ============ */
+.perfection-label, .perfection-sub { display: none; }
+#end.perfection .end-label.timeup { display: none; }
+#end.perfection .perfection-label {
+  display: block;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 12px;
+  color: transparent;
+  background: linear-gradient(135deg, #fff 0%, #ff80ff 20%, #ffea64 40%, #64ffea 60%, #ff80ff 80%, #fff 100%);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: perfectionShift 2s linear infinite;
+  text-transform: uppercase;
+}
+#end.perfection .perfection-sub {
+  display: block;
+  font-size: 13px;
+  letter-spacing: 5px;
+  color: var(--gold);
+  text-transform: uppercase;
+  text-shadow: 0 0 0.4em rgba(255, 210, 63, 0.7);
+}
+#end.perfection .final-score {
+  background: linear-gradient(135deg, #fff 0%, #ff80ff 20%, #ffea64 40%, #64ffea 60%, #ff80ff 80%, #fff 100%);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+  filter: drop-shadow(0 0 0.25em rgba(255, 255, 255, 0.85));
+  animation: perfectionShift 2s linear infinite;
+}
+
+@keyframes perfectionShift {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
+}
+
+/* leaderboard satırı perfection ise gökkuşağı */
+.leaderboard-mini .row.perfect .name,
+.leaderboard-mini .row.perfect .score {
+  background: linear-gradient(135deg, #fff, #ff80ff, #ffea64, #64ff64, #64ffff, #fff);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: perfectionShift 3s linear infinite;
+}
+.leaderboard-mini .row.perfect .rank {
+  color: var(--gold);
+}
+.leaderboard-mini .row.perfect .rank::after {
+  content: ' ★';
+  font-size: 11px;
+}
+.leaderboard-mini .row.endless-mark .rank::before {
+  content: '∞ ';
+  color: var(--accent);
+  font-size: 13px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  max-width: 520px;
+  width: 100%;
+  margin-top: 4px;
+}
+.stat-card {
+  text-align: center;
+}
+.stat-value {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+.stat-value.gold { color: var(--gold); text-shadow: 0 0 0.3em rgba(255, 210, 63, 0.4); }
+.stat-value .sep { color: var(--fg-muted); font-weight: 400; margin: 0 2px; }
+.stat-value .small { font-size: 0.6em; color: var(--fg-muted); font-weight: 700; }
+.stat-label {
+  font-size: 11px;
+  color: var(--fg-muted);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  margin-top: 8px;
+  font-weight: 700;
+}
+
+.name-input-row {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.name-input-row.shown { display: flex; }
+
+.name-boxes {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+.name-box {
+  background: var(--bg-elevated);
+  color: var(--accent);
+  border: 2px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 56px;
+  font-weight: 800;
+  text-align: center;
+  width: 84px;
+  height: 104px;
+  padding: 0;
+  text-transform: uppercase;
+  border-radius: 4px;
+  outline: none;
+  caret-color: var(--accent);
+  transition: border-color var(--transition), color var(--transition), transform var(--transition);
+}
+.name-box:focus { border-color: var(--accent); transform: translateY(-2px); }
+.name-box.blocked { border-color: var(--danger); color: var(--danger); }
+
+.name-error {
+  display: none;
+  color: var(--danger);
+  font-size: 12px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-top: 2px;
+  font-weight: 700;
+  text-align: center;
+  max-width: 340px;
+}
+.name-error.shown { display: block; }
+
+/* reset confirm modal */
+.reset-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 8px;
+}
+.btn-danger {
+  background: var(--danger);
+  color: var(--bg);
+  border: none;
+  padding: 16px 32px;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 4px;
+  cursor: pointer;
+  border-radius: 4px;
+  min-height: 56px;
+}
+.btn-danger:active { transform: scale(0.96); }
+.btn-cancel {
+  background: transparent;
+  color: var(--fg);
+  border: 2px solid var(--border);
+  padding: 14px 32px;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  cursor: pointer;
+  border-radius: 4px;
+  min-height: 56px;
+}
+.btn-cancel:active { transform: scale(0.96); border-color: var(--accent); color: var(--accent); }
+
+.btn-secondary {
+  background: transparent;
+  color: var(--fg);
+  border: 2px solid var(--border);
+  padding: 24px 64px;
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  cursor: pointer;
+  min-height: 80px;
+  border-radius: 4px;
+  transition: transform var(--transition), border-color var(--transition), color var(--transition);
+}
+
+.btn-secondary:active {
+  transform: scale(0.97);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ================= SETTINGS / VERSION ================= */
+.gear-btn {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  width: 44px;
+  height: 44px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--fg-muted);
+  font-size: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+  z-index: 20;
+}
+.gear-btn:active { transform: scale(0.92); color: var(--accent); border-color: var(--accent); }
+.gear-btn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 15, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 24px;
+}
+.modal-overlay.shown { display: flex; }
+
+.modal {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 28px 32px;
+  min-width: 340px;
+  max-width: 480px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.modal::-webkit-scrollbar { width: 8px; }
+.modal::-webkit-scrollbar-track { background: transparent; }
+.modal::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+.modal::-webkit-scrollbar-thumb:hover { background: var(--fg-muted); }
+
+.modal-header {
+  display: grid;
+  grid-template-columns: 32px 1fr 32px;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  letter-spacing: 6px;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+}
+.modal-header > span { text-align: center; }
+
+.modal-back {
+  background: transparent;
+  border: none;
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: 22px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  font-weight: 700;
+  visibility: hidden;
+}
+.modal-back.shown { visibility: visible; }
+.modal-back:active { color: var(--accent); }
+
+.modal-close {
+  background: transparent;
+  border: none;
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0 8px;
+  line-height: 1;
+  font-weight: 700;
+}
+.modal-close:active { color: var(--accent); }
+
+.settings-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.settings-row:last-child { border-bottom: none; }
+
+.settings-label {
+  font-size: 14px;
+  letter-spacing: 4px;
+  color: var(--fg);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.toggle-pill {
+  background: transparent;
+  color: var(--fg-muted);
+  border: 2px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  min-width: 80px;
+  transition: all var(--transition);
+}
+.toggle-pill.on {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+.toggle-pill:active { transform: scale(0.95); }
+
+.theme-group { display: flex; gap: 8px; }
+.theme-btn {
+  background: var(--bg);
+  border: 2px solid var(--border);
+  font-size: 22px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all var(--transition);
+  line-height: 1;
+}
+.theme-btn.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.28);
+}
+.theme-btn:active { transform: scale(0.92); }
+
+.lang-group { display: flex; gap: 6px; }
+.lang-btn {
+  background: transparent;
+  color: var(--fg-muted);
+  border: 2px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 8px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.lang-btn.active {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+.lang-btn:active { transform: scale(0.95); }
+
+.credits-btn {
+  background: transparent;
+  color: var(--fg);
+  border: 2px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  padding: 10px 18px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.credits-btn:active { transform: scale(0.96); border-color: var(--accent); color: var(--accent); }
+
+.credits-content, .tech-content, .fn-content { display: none; }
+.credits-content.shown, .tech-content.shown, .fn-content.shown { display: block; }
+.credits-content .row, .tech-content .row, .fn-content .row {
+  padding: 8px 0;
+  font-size: 13px;
+  color: var(--fg-muted);
+  letter-spacing: 1px;
+  border-bottom: 1px dashed var(--border);
+}
+.credits-content .row:last-child, .tech-content .row:last-child, .fn-content .row:last-child { border-bottom: none; }
+.credits-content .row strong, .tech-content .row strong, .fn-content .row strong {
+  color: var(--accent);
+  display: block;
+  font-size: 11px;
+  letter-spacing: 4px;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.tech-cta {
+  width: 100%;
+  margin-top: 14px;
+  background: transparent;
+  color: var(--accent);
+  border: 2px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  padding: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.tech-cta:active { transform: scale(0.97); border-color: var(--accent); }
+
+.settings-content.hidden { display: none; }
+
+/* version tag — sağ alt köşede minicik */
+.version-tag {
+  position: fixed;
+  bottom: 6px;
+  right: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--fg-muted);
+  opacity: 0.35;
+  letter-spacing: 1px;
+  z-index: 1;
+  pointer-events: none;
+  user-select: none;
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ============ WELCOME ============ -->
+  <section id="welcome" class="screen active">
+    <button class="gear-btn" id="btn-settings" aria-label="settings">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+    <button class="edge-toggle right" id="show-board-btn" aria-label="scoreboard">▶</button>
+    <button class="edge-toggle left"  id="back-from-board" aria-label="back">◀</button>
+    <div class="welcome-grid" id="welcome-grid">
+      <div class="welcome-left">
+        <div class="logo">AI <span class="or">or</span> REAL</div>
+        <div class="tagline" data-i18n="tagline">YAPAY ZEKA mı &nbsp;·&nbsp; GERÇEK mi</div>
+        <button class="btn-primary" id="btn-start" data-i18n="start">BAŞLA</button>
+        <button class="btn-endless" id="btn-endless"><span class="infinity">∞</span><span data-i18n="endless">SONSUZ MOD</span></button>
+      </div>
+      <div class="welcome-right">
+        <div class="leaderboard-mini">
+          <h3 data-i18n="top5">TOP 10</h3>
+          <div id="leaderboard-list"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ GAME ============ -->
+  <section id="game" class="screen">
+    <div class="game-frame">
+      <div class="hud">
+        <div class="timer" id="timer-box"><span id="timer">60</span><span class="unit" data-i18n="sec">sn</span></div>
+        <div class="lives" id="lives-box"></div>
+        <div class="score-display">
+          <span class="label" data-i18n="score">SKOR</span>
+          <span class="value" id="score">0</span>
+        </div>
+      </div>
+      <div class="image-stage" id="image-stage">
+        <img id="image" alt="">
+        <div class="combo-badge" id="combo-badge"></div>
+        <div class="streak-banner" id="streak-banner"></div>
+        <div class="debug-label" id="debug-label"></div>
+        <div class="flash" id="flash"></div>
+        <div class="countdown" id="countdown"></div>
+      </div>
+      <div class="choice-row">
+        <button class="btn-choice" data-choice="ai" data-i18n="choice_ai">YAPAY ZEKA</button>
+        <button class="btn-choice" data-choice="real" data-i18n="choice_real">GERÇEK</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ END ============ -->
+  <section id="end" class="screen">
+    <div class="end-label timeup" data-i18n="timeUp">SÜRE BİTTİ</div>
+    <div class="end-label victory-label" id="victory-label"></div>
+    <div class="end-label perfection-label" data-i18n="perfection">PERFECTION</div>
+    <div class="end-label perfection-sub" data-i18n="perfectionSub">60/60 · TÜM CEVAPLAR DOĞRU</div>
+    <div class="final-score" id="final-score">0</div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value"><span id="stat-correct">0</span><span class="sep">/</span><span class="small" id="stat-total">0</span></div>
+        <div class="stat-label" data-i18n="statCorrect">DOĞRU</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value gold" id="stat-streak">0</div>
+        <div class="stat-label" data-i18n="statStreak">EN UZUN SERİ</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-accuracy">0%</div>
+        <div class="stat-label" data-i18n="statAccuracy">DOĞRULUK</div>
+      </div>
+    </div>
+    <div class="name-input-row" id="name-row">
+      <div class="end-label" data-i18n="enterName">TOP 5'E GİRDİN · İSMİNİ GİR</div>
+      <div class="name-boxes">
+        <input class="name-box" maxlength="1" data-pos="0" autocomplete="off" inputmode="text" autocapitalize="characters">
+        <input class="name-box" maxlength="1" data-pos="1" autocomplete="off" inputmode="text" autocapitalize="characters">
+        <input class="name-box" maxlength="1" data-pos="2" autocomplete="off" inputmode="text" autocapitalize="characters">
+      </div>
+      <div class="name-error" id="name-error" data-i18n="nameBlocked">Bu isim leaderboard'a eklenemez</div>
+    </div>
+    <button class="btn-secondary" id="btn-restart" data-i18n="playAgain">TEKRAR OYNA</button>
+  </section>
+
+</div>
+
+<!-- ============ SETTINGS MODAL ============ -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <button class="modal-back" id="modal-back" aria-label="back">←</button>
+      <span id="modal-title" data-i18n="settings">AYARLAR</span>
+      <button class="modal-close" id="modal-close" aria-label="close">×</button>
+    </div>
+    <div class="settings-content" id="settings-content">
+      <div class="settings-row">
+        <span class="settings-label" data-i18n="sound">SES</span>
+        <button class="toggle-pill on" id="toggle-sound"><span data-i18n="on">AÇIK</span></button>
+      </div>
+      <div class="settings-row">
+        <span class="settings-label" data-i18n="theme">TEMA</span>
+        <div class="theme-group">
+          <button class="theme-btn" data-theme="apple"     title="Yeşil Elma">🍏</button>
+          <button class="theme-btn" data-theme="grape"     title="Üzüm">🍇</button>
+          <button class="theme-btn" data-theme="cherry"    title="Kiraz">🍒</button>
+          <button class="theme-btn" data-theme="blueberry" title="Yaban Mersini">🫐</button>
+          <button class="theme-btn" data-theme="lemon"     title="Limon">🍋</button>
+        </div>
+      </div>
+      <div class="settings-row">
+        <span class="settings-label" data-i18n="lang">DİL</span>
+        <div class="lang-group">
+          <button class="lang-btn" data-lang="tr">TR</button>
+          <button class="lang-btn" data-lang="en">EN</button>
+        </div>
+      </div>
+      <div class="settings-row">
+        <span class="settings-label" data-i18n="credits">KREDİLER</span>
+        <button class="credits-btn" id="open-credits" data-i18n="view">GÖSTER</button>
+      </div>
+    </div>
+    <div class="credits-content" id="credits-content">
+      <div class="row"><strong data-i18n="cr_game">OYUN</strong>Galip Koray Şahin</div>
+      <div class="row"><strong data-i18n="cr_ai_img">AI GÖRSELLER</strong>Civitai</div>
+      <div class="row"><strong data-i18n="cr_real_img">GERÇEK GÖRSELLER</strong>Picsum.photos</div>
+      <div class="row"><strong data-i18n="cr_sound">SES</strong>WebAudio synthesis</div>
+      <div class="row"><strong data-i18n="cr_font">FONT</strong>JetBrains Mono</div>
+      <button class="tech-cta" id="open-tech" data-i18n="tech">TEKNİK</button>
+      <button class="tech-cta" id="open-fn" data-i18n="functions" style="margin-top: 8px;">FONKSİYONLAR</button>
+    </div>
+    <div class="fn-content" id="fn-content">
+      <div class="row"><strong data-i18n="fn_combo_t">KOMBO SİSTEMİ</strong><span data-i18n="fn_combo">5 doğruda ×2, sonra ×4, ×8, ×16 katlamalı</span></div>
+      <div class="row"><strong data-i18n="fn_speed_t">HIZ BONUSU</strong><span data-i18n="fn_speed">2 saniye içinde cevapta +100, lineer azalma</span></div>
+      <div class="row"><strong data-i18n="fn_wrong_t">YANLIŞ CEZASI</strong><span data-i18n="fn_wrong">−50 puan + kalan süreden −3 saniye</span></div>
+      <div class="row"><strong data-i18n="fn_cd_t">3-2-1 GERİ SAYIM</strong><span data-i18n="fn_cd">Hazırlık için oyun başında bekleme</span></div>
+      <div class="row"><strong data-i18n="fn_low_t">SON 5 SANİYE UYARISI</strong><span data-i18n="fn_low">Sayaç kırmızıya döner, ritmik pulse + tik sesi</span></div>
+      <div class="row"><strong data-i18n="fn_streak_t">STREAK BANNER</strong><span data-i18n="fn_streak">Tier-up'ta altın yazı + tier'a özel ses katmanı</span></div>
+      <div class="row"><strong data-i18n="fn_hs_t">HIGH SCORE KUTLAMASI</strong><span data-i18n="fn_hs">Top 5'e girince C major arpejyo + sürdürülen finale</span></div>
+      <div class="row"><strong data-i18n="fn_censor_t">İSİM SANSÜRÜ</strong><span data-i18n="fn_censor">70+ uygunsuz 3 harf engellenir + canlı uyarı</span></div>
+      <div class="row"><strong data-i18n="fn_reset_t">LEADERBOARD RESET</strong><span data-i18n="fn_reset">Welcome logosuna 5 tık → onaylı sıfırlama</span></div>
+      <div class="row"><strong data-i18n="fn_top5_t">TOP 5 LEADERBOARD</strong><span data-i18n="fn_top5">Skor tablosu, yerel veya online (JSONBin)</span></div>
+      <div class="row"><strong data-i18n="fn_themes_t">5 TEMA</strong><span data-i18n="fn_themes">Yeşil elma, üzüm, kiraz, yaban mersini, limon</span></div>
+      <div class="row"><strong data-i18n="fn_lang_t">TR / EN DİL</strong><span data-i18n="fn_lang">Tüm metinler anlık tercüme</span></div>
+      <div class="row"><strong data-i18n="fn_sound_t">SES KONTROLÜ</strong><span data-i18n="fn_sound">Tüm efektleri tek tıkla kes</span></div>
+      <div class="row"><strong data-i18n="fn_stats_t">END İSTATİSTİKLERİ</strong><span data-i18n="fn_stats">Doğru/yanlış, en uzun seri, doğruluk %</span></div>
+      <div class="row"><strong data-i18n="fn_offline_t">OFFLINE / PWA</strong><span data-i18n="fn_offline">İnternet yokken bile çalışır, ana ekrana eklenebilir</span></div>
+      <div class="row"><strong data-i18n="fn_stage_t">4:3 SAHNE</strong><span data-i18n="fn_stage">Her tablette merkez kolon, yan gutters</span></div>
+    </div>
+    <div class="tech-content" id="tech-content">
+      <div class="row"><strong>HTML5 + CSS3</strong><span data-i18n="tech_html">Tek dosya, gömülü stil ve script</span></div>
+      <div class="row"><strong>CSS Container Queries</strong><span data-i18n="tech_cq">Sahne genişliğine göre yazı tipinin adaptif ölçeklenmesi</span></div>
+      <div class="row"><strong>CSS Custom Properties</strong><span data-i18n="tech_vars">5 meyve teması için değişken tabanlı renk sistemi</span></div>
+      <div class="row"><strong>JavaScript IIFE</strong><span data-i18n="tech_iife">Kapalı scope ile state'in cheat'e karşı korunması</span></div>
+      <div class="row"><strong>Web Audio API</strong><span data-i18n="tech_audio">Tüm ses efektleri runtime'da sentezlenir, ses dosyası yok</span></div>
+      <div class="row"><strong>Fisher-Yates Shuffle</strong><span data-i18n="tech_shuffle">Görsel destesinin tarafsız karıştırılması</span></div>
+      <div class="row"><strong>XOR + Base64</strong><span data-i18n="tech_xor">images.json etiketlerinin obfuscation'ı</span></div>
+      <div class="row"><strong>localStorage</strong><span data-i18n="tech_storage">Skor tablosu ve ayarların cihaza yerel kaydı</span></div>
+      <div class="row"><strong>Service Worker</strong><span data-i18n="tech_sw">Offline çalışma + stale-while-revalidate cache</span></div>
+      <div class="row"><strong>Web App Manifest</strong><span data-i18n="tech_pwa">PWA olarak ana ekrana eklenebilirlik</span></div>
+      <div class="row"><strong>Civitai</strong><span data-i18n="tech_pollinations">Topluluk AI görsel galerisi (NSFW=None filtreli)</span></div>
+      <div class="row"><strong>Picsum.photos</strong><span data-i18n="tech_picsum">Rastgele gerçek fotoğraf kaynağı</span></div>
+      <div class="row"><strong>GitHub Pages</strong><span data-i18n="tech_pages">Statik site barındırma</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ RESET CONFIRM MODAL ============ -->
+<div class="modal-overlay" id="reset-modal">
+  <div class="modal">
+    <div class="modal-header" style="justify-content: center; color: var(--danger);">
+      <span data-i18n="resetTitle">LEADERBOARD SIFIRLANSIN MI?</span>
+    </div>
+    <div class="reset-actions">
+      <button class="btn-cancel" id="reset-cancel" data-i18n="no">HAYIR</button>
+      <button class="btn-danger" id="reset-confirm" data-i18n="yes">EVET</button>
+    </div>
+  </div>
+</div>
+
+<div class="version-tag" id="version-tag"></div>
+
+<script>
+(() => {
+'use strict';
+// =========================================================
+// CONFIG
+// =========================================================
+const BIN_URL = ''; // Development: no connection to the original leaderboard
+const API_KEY = ''; // Never publish service credentials in client code
+const DEBUG_LABEL = false;  // test için true yap, prodda false
+const _OK = 'Xq3#zT';       // label obfuscation key
+const BUILD = 'v0.1.0';        // her push'ta bump et
+
+const ROUND_DURATION_MS     = 60000;
+const COUNTDOWN_STEP_MS     = 700;
+const BASE_SCORE            = 50;
+const SPEED_BONUS_MAX       = 100;
+const SPEED_BONUS_WINDOW_MS = 2000;
+const WRONG_SCORE_PENALTY   = -50;
+const WRONG_TIME_PENALTY_MS = 3000;
+const COMBO_TIER_SIZE       = 5;
+const COMBO_TIERS           = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144];  // streak/5 → çarpan
+const ENDLESS_LIVES         = 3;
+const LEADERBOARD_SIZE      = 10;
+
+// Skor → bitiş ekranı tier'ı. Yüksekten alçağa sıralı, ilk eşleşen kazanır.
+const VICTORY_TIERS = [
+  { threshold: 1500000, key: 'v_godlike',     sound: 'streakMythic'    },
+  { threshold: 750000,  key: 'v_mythic',      sound: 'streakGodlike'   },
+  { threshold: 300000,  key: 'v_legendary',   sound: 'streakUltimate'  },
+  { threshold: 150000,  key: 'v_phenomenal',  sound: 'streakLegendary' },
+  { threshold: 75000,   key: 'v_incredible',  sound: 'streakInsane'    },
+  { threshold: 30000,   key: 'v_outstanding', sound: 'streakHuge'      },
+  { threshold: 15000,   key: 'v_awesome',     sound: 'streakBig'       },
+  { threshold: 7500,    key: 'v_impressive',  sound: 'streakMid'       },
+  { threshold: 3000,    key: 'v_great',       sound: 'streakSmall'     },
+  { threshold: 1500,    key: 'v_good',        sound: 'highScore'       },
+  { threshold: 500,     key: 'v_nice',        sound: 'highScore'       },
+  { threshold: 100,     key: 'v_notbad',      sound: 'end'             },
+];
+function getVictoryTier(score) {
+  return VICTORY_TIERS.find(t => score >= t.threshold) || null;
+}
+const LB_STORAGE_KEY        = 'aiorreal_leaderboard_v1';
+const SETTINGS_STORAGE_KEY  = 'aiorreal_settings_v1';
+
+// =========================================================
+// NAME BLOCKLIST (top-5 ekran adı sansürü)
+// =========================================================
+const BLOCKED_NAMES = new Set([
+  // TR
+  'AMK','AMQ','AMA','AMI','AMO','AKM','KYO','KOY','ANN','OSP','IBN',
+  'GOT','GOO','SIK','S1K','SKM','SKR','BOK','KIC','4MK','4MQ',
+  // EN sexual
+  'SEX','S3X','5EX','SXY','FUK','FCK','FUQ','ASS','A55','AZZ',
+  'TIT','T1T','DIK','DCK','D1K','COC','CCK','ANL','VAG','CUM',
+  'ORG','POR','PRN','XXX',
+  // slurs
+  'FAG','F4G','NIG','NGR','N1G','KKK','NAZ','KIK','JEW','GAY',
+  // drugs/violence
+  'LSD','THC','GHB','DMT','TNT','GUN','KIL','DIE',
+  // ambiguous (kullanıcı onayladı)
+  'TSK','HOM','ANA'
+]);
+
+function isBlockedName(s) {
+  if (!s) return false;
+  return BLOCKED_NAMES.has(s.toUpperCase());
+}
+
+// =========================================================
+// I18N
+// =========================================================
+const I18N = {
+  tr: {
+    tagline:    'YAPAY ZEKA mı &nbsp;·&nbsp; GERÇEK mi',
+    start:      'BAŞLA',
+    endless:    'SONSUZ MOD',
+    top5:       'TOP 10',
+    v_notbad:     'FENA DEĞİL!',
+    v_nice:       'İYİ!',
+    v_good:       'GÜZEL!',
+    v_great:      'HARİKA!',
+    v_impressive: 'ETKİLEYİCİ!',
+    v_awesome:    'MUHTEŞEM!',
+    v_outstanding:'OLAĞANÜSTÜ!',
+    v_incredible: 'İNANILMAZ!',
+    v_phenomenal: 'FENOMENAL!',
+    v_legendary:  'EFSANEVÎ!',
+    v_mythic:     'MİTİK!',
+    v_godlike:    'TANRISAL!',
+    back:         'GERİ',
+    choice_ai:  'YAPAY ZEKA',
+    choice_real:'GERÇEK',
+    score:      'SKOR',
+    sec:        'sn',
+    timeUp:     'SÜRE BİTTİ',
+    enterName:  "TOP 5'E GİRDİN · İSMİNİ GİR",
+    playAgain:  'TEKRAR OYNA',
+    settings:   'AYARLAR',
+    sound:      'SES',
+    on:         'AÇIK',
+    off:        'KAPALI',
+    lang:       'DİL',
+    theme:      'TEMA',
+    credits:    'KREDİLER',
+    view:       'GÖSTER',
+    cr_game:    'OYUN',
+    cr_code:    'KOD',
+    cr_ai_img:  'AI GÖRSELLER',
+    cr_real_img:'GERÇEK GÖRSELLER',
+    cr_sound:   'SES',
+    cr_font:    'FONT',
+    dbg_ai:     'YAPAY ZEKA GÖRSELİ',
+    dbg_real:   'GERÇEK GÖRSEL',
+    nameBlocked:"Bu isim leaderboard'a eklenemez",
+    resetTitle: 'LEADERBOARD SIFIRLANSIN MI?',
+    yes:        'EVET',
+    no:         'HAYIR',
+    statCorrect:'DOĞRU',
+    statStreak: 'EN UZUN SERİ',
+    statAccuracy:'DOĞRULUK',
+    perfection: 'PERFECTION',
+    perfectionSub:'60/60 · TÜM CEVAPLAR DOĞRU',
+    tech:       'TEKNİK',
+    functions:  'FONKSİYONLAR',
+    fn_combo_t: 'KOMBO SİSTEMİ',          fn_combo:   '5 doğruda ×2, sonra ×4, ×8, ×16 katlamalı',
+    fn_speed_t: 'HIZ BONUSU',             fn_speed:   '2 saniye içinde cevapta +100, lineer azalma',
+    fn_wrong_t: 'YANLIŞ CEZASI',          fn_wrong:   '−50 puan + kalan süreden −3 saniye',
+    fn_cd_t:    '3-2-1 GERİ SAYIM',       fn_cd:      'Hazırlık için oyun başında bekleme',
+    fn_low_t:   'SON 5 SANİYE UYARISI',   fn_low:     'Sayaç kırmızıya döner, ritmik pulse + tik sesi',
+    fn_streak_t:'STREAK BANNER',          fn_streak:  "Tier-up'ta altın yazı + tier'a özel ses katmanı",
+    fn_hs_t:    'HIGH SCORE KUTLAMASI',   fn_hs:      "Top 5'e girince C major arpejyo + sürdürülen finale",
+    fn_censor_t:'İSİM SANSÜRÜ',           fn_censor:  '70+ uygunsuz 3 harf engellenir + canlı uyarı',
+    fn_reset_t: 'LEADERBOARD RESET',      fn_reset:   'Welcome logosuna 5 tık → onaylı sıfırlama',
+    fn_top5_t:  'TOP 5 LEADERBOARD',      fn_top5:    'Skor tablosu, yerel veya online (JSONBin)',
+    fn_themes_t:'5 TEMA',                 fn_themes:  'Yeşil elma, üzüm, kiraz, yaban mersini, limon',
+    fn_lang_t:  'TR / EN DİL',            fn_lang:    'Tüm metinler anlık tercüme',
+    fn_sound_t: 'SES KONTROLÜ',           fn_sound:   'Tüm efektleri tek tıkla kes',
+    fn_stats_t: 'END İSTATİSTİKLERİ',     fn_stats:   'Doğru/yanlış, en uzun seri, doğruluk %',
+    fn_offline_t:'OFFLINE / PWA',         fn_offline: 'İnternet yokken bile çalışır, ana ekrana eklenebilir',
+    fn_stage_t: '4:3 SAHNE',              fn_stage:   'Her tablette merkez kolon, yan gutters',
+    tech_html:  'Tek dosya, gömülü stil ve script',
+    tech_cq:    'Sahne genişliğine göre yazı tipinin adaptif ölçeklenmesi',
+    tech_vars:  '5 meyve teması için değişken tabanlı renk sistemi',
+    tech_iife:  "Kapalı scope ile state'in cheat'e karşı korunması",
+    tech_audio: "Tüm ses efektleri runtime'da sentezlenir, ses dosyası yok",
+    tech_shuffle:'Görsel destesinin tarafsız karıştırılması',
+    tech_xor:   "images.json etiketlerinin obfuscation'ı",
+    tech_storage:'Skor tablosu ve ayarların cihaza yerel kaydı',
+    tech_sw:    'Offline çalışma + stale-while-revalidate cache',
+    tech_pwa:   'PWA olarak ana ekrana eklenebilirlik',
+    tech_pollinations:'Topluluk AI görsel galerisi (NSFW=None filtreli)',
+    tech_picsum:'Rastgele gerçek fotoğraf kaynağı',
+    tech_pages: 'Statik site barındırma',
+  },
+  en: {
+    tagline:    'AI &nbsp;·&nbsp; OR REAL',
+    start:      'START',
+    endless:    'ENDLESS',
+    top5:       'TOP 10',
+    v_notbad:     'NOT BAD!',
+    v_nice:       'NICE!',
+    v_good:       'GOOD!',
+    v_great:      'GREAT!',
+    v_impressive: 'IMPRESSIVE!',
+    v_awesome:    'AWESOME!',
+    v_outstanding:'OUTSTANDING!',
+    v_incredible: 'INCREDIBLE!',
+    v_phenomenal: 'PHENOMENAL!',
+    v_legendary:  'LEGENDARY!',
+    v_mythic:     'MYTHIC!',
+    v_godlike:    'GODLIKE!',
+    back:         'BACK',
+    choice_ai:  'AI',
+    choice_real:'REAL',
+    score:      'SCORE',
+    sec:        's',
+    timeUp:     'TIME UP',
+    enterName:  'MADE TOP 5 · ENTER NAME',
+    playAgain:  'PLAY AGAIN',
+    settings:   'SETTINGS',
+    sound:      'SOUND',
+    on:         'ON',
+    off:        'OFF',
+    lang:       'LANGUAGE',
+    theme:      'THEME',
+    credits:    'CREDITS',
+    view:       'VIEW',
+    cr_game:    'GAME',
+    cr_code:    'CODE',
+    cr_ai_img:  'AI IMAGES',
+    cr_real_img:'REAL IMAGES',
+    cr_sound:   'SOUND',
+    cr_font:    'FONT',
+    dbg_ai:     'AI IMAGE',
+    dbg_real:   'REAL IMAGE',
+    nameBlocked:'This name cannot be added to the leaderboard',
+    resetTitle: 'RESET THE LEADERBOARD?',
+    yes:        'YES',
+    no:         'NO',
+    statCorrect:'CORRECT',
+    statStreak: 'BEST STREAK',
+    statAccuracy:'ACCURACY',
+    perfection: 'PERFECTION',
+    perfectionSub:'60/60 · ALL CORRECT',
+    tech:       'TECHNICAL',
+    functions:  'FEATURES',
+    fn_combo_t: 'COMBO SYSTEM',           fn_combo:   '5 correct → ×2, then ×4, ×8, ×16 multiplier',
+    fn_speed_t: 'SPEED BONUS',            fn_speed:   'Up to +100 if answered within 2 seconds, linear decay',
+    fn_wrong_t: 'WRONG PENALTY',          fn_wrong:   '−50 points + −3 seconds from remaining time',
+    fn_cd_t:    '3-2-1 COUNTDOWN',        fn_cd:      'Preparation pause before round starts',
+    fn_low_t:   'LAST 5 SECONDS WARNING', fn_low:     'Timer turns red, rhythmic pulse + tick sound',
+    fn_streak_t:'STREAK BANNER',          fn_streak:  'Tier-up shows gold text + tier-specific sound layer',
+    fn_hs_t:    'HIGH SCORE FANFARE',     fn_hs:      'C major arpeggio + sustained finale on top 5 entry',
+    fn_censor_t:'NAME CENSORSHIP',        fn_censor:  '70+ inappropriate 3-letter codes blocked + live warning',
+    fn_reset_t: 'LEADERBOARD RESET',      fn_reset:   '5 taps on welcome logo → confirmed reset',
+    fn_top5_t:  'TOP 5 LEADERBOARD',      fn_top5:    'Score table, local or online (JSONBin)',
+    fn_themes_t:'5 THEMES',               fn_themes:  'Apple, grape, cherry, blueberry, lemon',
+    fn_lang_t:  'TR / EN',                fn_lang:    'All text translates instantly',
+    fn_sound_t: 'SOUND TOGGLE',           fn_sound:   'Mute all effects with one tap',
+    fn_stats_t: 'END SCREEN STATS',       fn_stats:   'Correct/wrong, best streak, accuracy %',
+    fn_offline_t:'OFFLINE / PWA',         fn_offline: 'Works offline, installable to home screen',
+    fn_stage_t: '4:3 STAGE',              fn_stage:   'Centered column with side gutters on any tablet',
+    tech_html:  'Single file, inline styles and scripts',
+    tech_cq:    'Adaptive font scaling via stage width',
+    tech_vars:  'Variable-based color system for 5 fruit themes',
+    tech_iife:  'Closed scope protects state from cheating',
+    tech_audio: 'All sound effects synthesized at runtime, no audio files',
+    tech_shuffle:'Unbiased shuffling of the image deck',
+    tech_xor:   'Obfuscation of labels in images.json',
+    tech_storage:'Leaderboard + settings saved locally to device',
+    tech_sw:    'Offline play + stale-while-revalidate cache',
+    tech_pwa:   'Installable as a PWA on home screen',
+    tech_pollinations:'Community AI image gallery (NSFW=None filtered)',
+    tech_picsum:'Random real photo source',
+    tech_pages: 'Static site hosting',
+  }
+};
+
+function applyLang() {
+  const dict = I18N[state.lang] || I18N.tr;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (dict[key] !== undefined) el.innerHTML = dict[key];
+  });
+  document.documentElement.lang = state.lang;
+  // language toggle visual state
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.lang === state.lang);
+  });
+}
+
+function t(key) {
+  return (I18N[state.lang] && I18N[state.lang][key]) || I18N.tr[key] || key;
+}
+const FEEDBACK_HOLD_MS      = 380;
+const LOW_TIME_THRESHOLD_S  = 10;
+
+// fallback — nötr seed isimleri (URL'den label sızmasın)
+const FALLBACK_IMAGES = [
+  { file: 'https://picsum.photos/seed/n7k2x/1000/700', label: 'ai'   },
+  { file: 'https://picsum.photos/seed/q3m9p/1000/700', label: 'real' },
+  { file: 'https://picsum.photos/seed/w8r4t/1000/700', label: 'ai'   },
+  { file: 'https://picsum.photos/seed/z5j1v/1000/700', label: 'real' },
+  { file: 'https://picsum.photos/seed/a6h0c/1000/700', label: 'ai'   },
+];
+
+// =========================================================
+// STATE
+// =========================================================
+const state = {
+  screen:        'welcome',
+  images:        [],
+  deckIndex:     0,
+  current:       null,
+  questionStart: 0,
+  score:         0,
+  streak:        0,
+  maxStreak:     0,
+  correctCount:  0,
+  wrongCount:    0,
+  timeLeftMs:    ROUND_DURATION_MS,
+  prevSec:       Math.ceil(ROUND_DURATION_MS / 1000),
+  rafId:         null,
+  lastFrameTime: 0,
+  busy:          false,
+  pendingNextId: null,
+  leaderboard:   [],
+  lang:          'tr',
+  soundEnabled:  true,
+  theme:         'apple',
+  perfectionAchieved: false,
+  mode:          'classic',  // 'classic' | 'endless'
+  lives:         ENDLESS_LIVES,
+};
+
+const VALID_THEMES = ['apple', 'grape', 'cherry', 'blueberry', 'lemon'];
+
+// =========================================================
+// SETTINGS PERSISTENCE
+// =========================================================
+function loadSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY) || '{}');
+    if (s.lang === 'tr' || s.lang === 'en') state.lang = s.lang;
+    if (typeof s.soundEnabled === 'boolean') state.soundEnabled = s.soundEnabled;
+    if (VALID_THEMES.includes(s.theme)) state.theme = s.theme;
+  } catch (e) {}
+}
+
+function saveSettings() {
+  try {
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({
+      lang: state.lang,
+      soundEnabled: state.soundEnabled,
+      theme: state.theme,
+    }));
+  } catch (e) {}
+}
+
+function applyTheme() {
+  VALID_THEMES.forEach(t => document.body.classList.remove('theme-' + t));
+  document.body.classList.add('theme-' + state.theme);
+  document.querySelectorAll('.theme-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.theme === state.theme);
+  });
+}
+
+// =========================================================
+// SOUND (WebAudio — dış dosya yok)
+// =========================================================
+const sfx = (() => {
+  let ctx = null;
+  function ensure() {
+    if (!state.soundEnabled) return null;
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ctx = new AC();
+    }
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+  function tone(freq, dur, type, vol) {
+    const c = ensure(); if (!c) return;
+    const t0 = c.currentTime;
+    const osc = c.createOscillator();
+    const g = c.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(vol, t0 + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(g).connect(c.destination);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.02);
+  }
+  function noise(dur, vol) {
+    const c = ensure(); if (!c) return;
+    const buf = c.createBuffer(1, Math.max(1, Math.floor(c.sampleRate * dur)), c.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1);
+    const src = c.createBufferSource();
+    src.buffer = buf;
+    const g = c.createGain();
+    const t0 = c.currentTime;
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(vol, t0 + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(g).connect(c.destination);
+    src.start(t0);
+    src.stop(t0 + dur + 0.02);
+  }
+  function sweep(f1, f2, dur, type, vol) {
+    const c = ensure(); if (!c) return;
+    const t0 = c.currentTime;
+    const osc = c.createOscillator();
+    const g = c.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(f1, t0);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(40, f2), t0 + dur);
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(vol, t0 + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(g).connect(c.destination);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.02);
+  }
+  return {
+    prime()    { ensure(); },
+    click()    { tone(720, 0.05, 'square', 0.07); },
+    correct()  { sweep(520, 920, 0.16, 'triangle', 0.18); },
+    wrong()    { sweep(260, 90, 0.30, 'sawtooth', 0.18); },
+    // ×2: kıvılcım
+    streakSmall() {
+      sweep(660, 990,  0.10, 'square', 0.14);
+      setTimeout(() => sweep(990, 1320, 0.10, 'square', 0.14), 70);
+      setTimeout(() => sweep(1320, 1980, 0.16, 'square', 0.16), 140);
+    },
+    // ×4: bass + arpejyo + climax
+    streakMid() {
+      tone(110, 0.45, 'triangle', 0.20);
+      const notes = [392, 523, 659, 784, 1047];
+      notes.forEach((f, i) => setTimeout(() => sweep(f, f * 1.02, 0.13, 'square', 0.17), i * 65));
+      setTimeout(() => sweep(1318, 1976, 0.28, 'square', 0.20), 360);
+    },
+    // ×8: sub + bass + 7-nota tırmanış + büyük finale
+    streakBig() {
+      tone(65, 0.75, 'sine', 0.22);
+      setTimeout(() => tone(130, 0.55, 'triangle', 0.18), 30);
+      const notes = [261, 329, 392, 523, 659, 784, 1047];
+      notes.forEach((f, i) => setTimeout(() => sweep(f, f * 1.02, 0.13, 'square', 0.18), 60 + i * 55));
+      setTimeout(() => {
+        sweep(1568, 2349, 0.55, 'sawtooth', 0.22);
+        tone(784, 0.55, 'triangle', 0.14);
+        tone(1047, 0.55, 'triangle', 0.12);
+      }, 500);
+    },
+    // ×16: epik — 3 oktav tırmanış + 4 katmanlı finale
+    streakHuge() {
+      tone(50, 0.95, 'sine', 0.25);
+      setTimeout(() => tone(100, 0.75, 'sine', 0.20), 25);
+      setTimeout(() => tone(200, 0.60, 'triangle', 0.17), 50);
+      const notes = [196, 261, 329, 392, 523, 659, 784, 1047, 1568];
+      notes.forEach((f, i) => setTimeout(() => sweep(f, f * 1.02, 0.13, 'square', 0.19), 80 + i * 55));
+      setTimeout(() => {
+        sweep(1568, 3136, 0.75, 'sawtooth', 0.24);
+        tone(784, 0.75, 'triangle', 0.16);
+        tone(1047, 0.75, 'triangle', 0.14);
+        tone(1318, 0.75, 'sine', 0.13);
+      }, 600);
+    },
+    // ×32: çılgın — 4 katman bass + 12-nota tırmanış + 5 sesli akor
+    streakInsane() {
+      tone(40, 1.1, 'sine', 0.27);
+      setTimeout(() => tone(80, 0.85, 'sine', 0.22), 25);
+      setTimeout(() => tone(160, 0.65, 'triangle', 0.18), 50);
+      setTimeout(() => tone(320, 0.50, 'triangle', 0.16), 75);
+      const notes = [130, 165, 196, 247, 294, 370, 440, 523, 659, 784, 988, 1175];
+      notes.forEach((f, i) => setTimeout(() => sweep(f, f * 1.02, 0.13, 'square', 0.20), 100 + i * 48));
+      setTimeout(() => {
+        sweep(1568, 3136, 0.85, 'sawtooth', 0.26);
+        tone(784, 0.85, 'triangle', 0.18);
+        tone(1047, 0.85, 'triangle', 0.16);
+        tone(1318, 0.85, 'sine', 0.14);
+        tone(1976, 0.85, 'sine', 0.12);
+      }, 720);
+    },
+    // ×64: efsane — patlama + 16-nota tırmanış 5 oktav + dev finale
+    streakLegendary() {
+      tone(30, 1.3, 'sine', 0.30);
+      setTimeout(() => tone(60, 1.0, 'sine', 0.25), 30);
+      setTimeout(() => tone(120, 0.8, 'sine', 0.22), 60);
+      setTimeout(() => tone(240, 0.6, 'triangle', 0.18), 90);
+      const notes = [98, 130, 165, 196, 247, 294, 370, 440, 523, 659, 784, 988, 1175, 1397, 1661, 1976];
+      notes.forEach((f, i) => setTimeout(() => sweep(f, f * 1.02, 0.13, 'square', 0.22), 120 + i * 40));
+      setTimeout(() => {
+        sweep(2349, 4699, 1.1, 'sawtooth', 0.28);
+        tone(987, 1.1, 'triangle', 0.18);
+        tone(1318, 1.1, 'triangle', 0.16);
+        tone(1976, 1.1, 'sine', 0.14);
+        tone(2349, 1.1, 'sine', 0.12);
+        tone(60, 1.1, 'sawtooth', 0.20);
+        tone(40, 1.1, 'sine', 0.22);
+      }, 880);
+    },
+    // ×256: godlike — 6 katman drone + 24-nota patlama + 7-sesli akor
+    streakGodlike() {
+      tone(15, 1.8, 'sine', 0.34);
+      setTimeout(() => tone(30, 1.5, 'sine', 0.30), 25);
+      setTimeout(() => tone(60, 1.2, 'sine', 0.26), 50);
+      setTimeout(() => tone(120, 1.0, 'triangle', 0.22), 75);
+      setTimeout(() => tone(240, 0.8, 'triangle', 0.19), 100);
+      setTimeout(() => tone(480, 0.6, 'triangle', 0.17), 125);
+      const notes = [73, 98, 110, 130, 165, 196, 220, 247, 294, 329, 392, 440, 523, 587, 659, 784, 880, 988, 1175, 1397, 1568, 1976, 2349, 2637];
+      notes.forEach((f, i) => setTimeout(() => sweep(f, f * 1.02, 0.11, 'square', 0.26), 150 + i * 30));
+      setTimeout(() => {
+        sweep(2349, 4699, 1.6, 'sawtooth', 0.32);
+        tone(987, 1.6, 'triangle', 0.22);
+        tone(1318, 1.6, 'triangle', 0.20);
+        tone(1976, 1.6, 'sine', 0.18);
+        tone(2349, 1.6, 'sine', 0.16);
+        tone(2637, 1.6, 'sine', 0.14);
+        tone(3136, 1.6, 'sine', 0.12);
+        tone(60, 1.6, 'sawtooth', 0.24);
+        tone(40, 1.6, 'sine', 0.26);
+        tone(20, 1.6, 'sine', 0.24);
+      }, 1050);
+    },
+    // ×512: mythic — disonant cluster + paralel arpejyolar + iki katman finale
+    streakMythic() {
+      tone(12, 2.0, 'sine', 0.36);
+      setTimeout(() => tone(25, 1.7, 'sine', 0.32), 25);
+      setTimeout(() => tone(50, 1.4, 'sine', 0.28), 50);
+      setTimeout(() => tone(100, 1.1, 'triangle', 0.24), 75);
+      setTimeout(() => tone(200, 0.9, 'triangle', 0.20), 100);
+      // alien dissonant cluster
+      setTimeout(() => { tone(370, 0.4, 'sawtooth', 0.18); tone(392, 0.4, 'sawtooth', 0.16); tone(415, 0.4, 'sawtooth', 0.14); }, 130);
+      const climb = [65, 87, 110, 130, 165, 196, 220, 247, 277, 311, 349, 392, 466, 523, 587, 622, 698, 784, 880, 988, 1109, 1244, 1397, 1568, 1760, 1976];
+      climb.forEach((f, i) => setTimeout(() => sweep(f, f * 1.02, 0.10, 'square', 0.27), 200 + i * 28));
+      setTimeout(() => {
+        sweep(2637, 5274, 1.8, 'sawtooth', 0.34);
+        tone(1109, 1.8, 'triangle', 0.22);
+        tone(1397, 1.8, 'triangle', 0.20);
+        tone(1976, 1.8, 'sine', 0.18);
+        tone(2349, 1.8, 'sine', 0.16);
+        tone(2793, 1.8, 'sine', 0.14);
+        tone(50, 1.8, 'sawtooth', 0.26);
+        tone(30, 1.8, 'sine', 0.28);
+        tone(12, 1.8, 'sine', 0.25);
+      }, 1180);
+    },
+    // ×2048: transcendent — 9 katman drone + 40 nota + dev orkestral akor
+    streakTranscendent() {
+      [8, 15, 30, 60, 120, 240, 480, 960, 1920].forEach((f, i) => {
+        setTimeout(() => tone(f, 2.5 - i * 0.15, i < 3 ? 'sine' : i < 6 ? 'triangle' : 'square', 0.38 - i * 0.02), i * 18);
+      });
+      const climb = [];
+      for (let i = 0; i < 40; i++) climb.push(40 * Math.pow(2, i / 6));
+      climb.forEach((f, i) => setTimeout(() => sweep(f, f * 1.02, 0.10, 'square', 0.30), 220 + i * 22));
+      setTimeout(() => {
+        sweep(3520, 7040, 2.5, 'sawtooth', 0.38);
+        [1318, 1568, 1976, 2349, 2960, 3520, 4435, 5274].forEach((f, i) => tone(f, 2.5, i % 2 ? 'sine' : 'triangle', 0.22 - i * 0.018));
+        [10, 20, 40].forEach(f => tone(f, 2.5, 'sine', 0.30));
+      }, 1380);
+    },
+    // ×4096: omega — 10 katman + white noise boom + 50 nota + ultimate akor
+    streakOmega() {
+      [5, 10, 20, 40, 80, 160, 320, 640, 1280, 2560].forEach((f, i) => {
+        setTimeout(() => tone(f, 2.8 - i * 0.18, i < 3 ? 'sine' : i < 6 ? 'triangle' : 'square', 0.40 - i * 0.025), i * 16);
+      });
+      setTimeout(() => noise(0.4, 0.25), 100);
+      const climb = [];
+      for (let i = 0; i < 50; i++) climb.push(30 * Math.pow(2, i / 7));
+      climb.forEach((f, i) => setTimeout(() => sweep(f, f * 1.02, 0.09, 'square', 0.32), 260 + i * 20));
+      setTimeout(() => {
+        sweep(4435, 8870, 2.8, 'sawtooth', 0.40);
+        [1568, 1976, 2349, 2960, 3520, 4435, 5274, 6272, 7459].forEach((f, i) => tone(f, 2.8, i % 2 ? 'sine' : 'triangle', 0.24 - i * 0.016));
+        [5, 10, 20, 40].forEach(f => tone(f, 2.8, 'sine', 0.32));
+        noise(0.6, 0.18);
+      }, 1560);
+    },
+    // ×1024: infinite — her şey katmanlı, evrensel patlama
+    streakInfinite() {
+      // 8-katman drone
+      [10, 20, 40, 80, 160, 320, 640, 1280].forEach((f, i) => setTimeout(() => tone(f, 2.2 - i * 0.15, i < 3 ? 'sine' : 'triangle', 0.35 - i * 0.025), i * 20));
+      // 32-nota MEGA climb
+      const climb = [55, 73, 87, 110, 123, 147, 165, 196, 220, 247, 277, 311, 349, 392, 440, 494, 523, 587, 659, 740, 831, 932, 988, 1109, 1244, 1397, 1568, 1760, 1976, 2217, 2489, 2794];
+      climb.forEach((f, i) => setTimeout(() => sweep(f, f * 1.02, 0.10, 'square', 0.28), 250 + i * 25));
+      // EXPLOSIVE finale: rich harmonic stack
+      setTimeout(() => {
+        sweep(3136, 6272, 2.2, 'sawtooth', 0.36);
+        tone(1175, 2.2, 'triangle', 0.24);
+        tone(1568, 2.2, 'triangle', 0.22);
+        tone(1976, 2.2, 'sine', 0.20);
+        tone(2489, 2.2, 'sine', 0.18);
+        tone(2960, 2.2, 'sine', 0.16);
+        tone(3520, 2.2, 'sine', 0.14);
+        tone(40, 2.2, 'sawtooth', 0.28);
+        tone(25, 2.2, 'sine', 0.30);
+        tone(15, 2.2, 'sine', 0.26);
+      }, 1300);
+    },
+    // ×128: ultimate — 5 katman drone + 20-nota patlama + dev akor cadansı
+    streakUltimate() {
+      tone(20, 1.6, 'sine', 0.32);
+      setTimeout(() => tone(40, 1.3, 'sine', 0.28), 25);
+      setTimeout(() => tone(80, 1.0, 'sine', 0.24), 50);
+      setTimeout(() => tone(160, 0.8, 'triangle', 0.20), 75);
+      setTimeout(() => tone(320, 0.6, 'triangle', 0.17), 100);
+      const notes = [82, 110, 130, 165, 196, 220, 261, 329, 392, 440, 523, 659, 784, 880, 1047, 1175, 1397, 1568, 1976, 2349];
+      notes.forEach((f, i) => setTimeout(() => sweep(f, f * 1.02, 0.12, 'square', 0.23), 130 + i * 35));
+      setTimeout(() => {
+        sweep(2349, 4699, 1.4, 'sawtooth', 0.30);
+        tone(987, 1.4, 'triangle', 0.20);
+        tone(1318, 1.4, 'triangle', 0.18);
+        tone(1976, 1.4, 'sine', 0.16);
+        tone(2349, 1.4, 'sine', 0.14);
+        tone(2637, 1.4, 'sine', 0.12);
+        tone(60, 1.4, 'sawtooth', 0.22);
+        tone(40, 1.4, 'sine', 0.24);
+        tone(30, 1.4, 'sine', 0.20);
+      }, 950);
+    },
+    tick()     { tone(1100, 0.05, 'sine', 0.10); },
+    countdown(){ tone(620, 0.08, 'triangle', 0.14); },
+    go()       { sweep(440, 880, 0.22, 'triangle', 0.20); },
+    end()      { sweep(440, 110, 0.55, 'sawtooth', 0.18); },
+    highScore(){
+      // C major ascending arpejyo + sustained finale
+      const notes = [523, 659, 784, 1047, 1318];
+      notes.forEach((f, i) => setTimeout(() => tone(f, 0.16, 'triangle', 0.16), i * 95));
+      setTimeout(() => {
+        tone(1568, 0.55, 'triangle', 0.18);
+        tone(2093, 0.55, 'sine', 0.10);
+      }, 540);
+    },
+    // ×8192-32768: beyond — omega'dan daha uzun, daha ezici
+    streakBeyond() {
+      [4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096].forEach((f, i) => {
+        setTimeout(() => tone(f, 3.0 - i * 0.18, i < 3 ? 'sine' : i < 6 ? 'triangle' : 'square', 0.40 - i * 0.02), i * 14);
+      });
+      setTimeout(() => noise(0.5, 0.28), 100);
+      const climb = [];
+      for (let i = 0; i < 60; i++) climb.push(25 * Math.pow(2, i / 7.5));
+      climb.forEach((f, i) => setTimeout(() => sweep(f, f * 1.02, 0.08, 'square', 0.34), 280 + i * 18));
+      setTimeout(() => {
+        sweep(5274, 10548, 3.0, 'sawtooth', 0.42);
+        [1976, 2349, 2960, 3520, 4435, 5274, 6272, 7459, 8870].forEach((f, i) => tone(f, 3.0, i % 2 ? 'sine' : 'triangle', 0.26 - i * 0.018));
+        [4, 8, 16, 32].forEach(f => tone(f, 3.0, 'sine', 0.34));
+        noise(0.7, 0.20);
+      }, 1700);
+    },
+    // ×65536-262144: infinity — en uzun, en yoğun
+    streakInfinityPlus() {
+      [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096].forEach((f, i) => {
+        setTimeout(() => tone(f, 3.5 - i * 0.2, i < 3 ? 'sine' : i < 6 ? 'triangle' : 'square', 0.42 - i * 0.022), i * 12);
+      });
+      setTimeout(() => noise(0.6, 0.30), 100);
+      setTimeout(() => noise(0.4, 0.22), 800);
+      const climb = [];
+      for (let i = 0; i < 70; i++) climb.push(20 * Math.pow(2, i / 8));
+      climb.forEach((f, i) => setTimeout(() => sweep(f, f * 1.02, 0.07, 'square', 0.36), 300 + i * 16));
+      setTimeout(() => {
+        sweep(6272, 12544, 3.5, 'sawtooth', 0.44);
+        [2349, 2960, 3520, 4435, 5274, 6272, 7459, 8870, 10548].forEach((f, i) => tone(f, 3.5, i % 2 ? 'sine' : 'triangle', 0.28 - i * 0.018));
+        [2, 4, 8, 16, 32].forEach(f => tone(f, 3.5, 'sine', 0.36));
+        noise(0.8, 0.22);
+      }, 1900);
+    },
+    // PERFECTION jackpot: bass hit + coin shower + fanfare + victory chord
+    jackpot() {
+      // big bass intro
+      tone(60, 1.8, 'sine', 0.32);
+      tone(120, 1.5, 'sine', 0.26);
+      tone(240, 1.0, 'triangle', 0.20);
+      // 40 random bell-coin pings
+      for (let i = 0; i < 40; i++) {
+        setTimeout(() => {
+          const f = 1500 + Math.random() * 2500;
+          tone(f, 0.07 + Math.random() * 0.05, 'sine', 0.16 + Math.random() * 0.05);
+        }, 80 + i * 38);
+      }
+      // ascending fanfare arpejyo
+      setTimeout(() => {
+        const notes = [261, 329, 392, 523, 659, 784, 1047, 1318, 1568, 1976];
+        notes.forEach((f, i) => setTimeout(() => sweep(f, f * 1.02, 0.14, 'triangle', 0.24), i * 90));
+      }, 1700);
+      // sustained victory chord
+      setTimeout(() => {
+        [523, 659, 784, 1047, 1318, 1568, 1976, 2349].forEach((f, i) => tone(f, 2.6, i % 2 ? 'sine' : 'triangle', 0.22 - i * 0.012));
+        tone(40, 2.6, 'sine', 0.30);
+        tone(20, 2.6, 'sine', 0.24);
+        noise(0.4, 0.16);
+      }, 2700);
+    },
+  };
+})();
+
+// =========================================================
+// UTIL
+// =========================================================
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function resolveImageSrc(entry) {
+  return /^https?:\/\//.test(entry.file) ? entry.file : `images/${entry.file}`;
+}
+
+function sanitizeName(raw) {
+  return (raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function _decode(b64) {
+  try {
+    const raw = atob(b64);
+    let o = '';
+    for (let i = 0; i < raw.length; i++) {
+      o += String.fromCharCode(raw.charCodeAt(i) ^ _OK.charCodeAt(i % _OK.length));
+    }
+    return o;
+  } catch (e) {
+    return '';
+  }
+}
+
+// =========================================================
+// IMAGES
+// =========================================================
+async function loadImages() {
+  try {
+    const res = await fetch('images.json', { cache: 'no-store' });
+    if (!res.ok) throw new Error('http ' + res.status);
+    const data = await res.json();
+    if (Array.isArray(data) && data.length > 0) {
+      return data.map(e => ({
+        file: e.f || e.file,
+        label: e.k ? _decode(e.k) : e.label
+      })).filter(e => e.file && (e.label === 'ai' || e.label === 'real'));
+    }
+    throw new Error('empty');
+  } catch (e) {
+    console.warn('images.json okunamadı, fallback kullanılıyor:', e.message);
+    return FALLBACK_IMAGES;
+  }
+}
+
+function pickNext() {
+  if (state.deckIndex >= state.images.length) {
+    state.images = shuffle(state.images);
+    state.deckIndex = 0;
+  }
+  state.current = state.images[state.deckIndex++];
+  return state.current;
+}
+
+function preloadAll() {
+  state.images.forEach(entry => {
+    const im = new Image();
+    im.src = resolveImageSrc(entry);
+  });
+}
+
+// =========================================================
+// SCREEN
+// =========================================================
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(name).classList.add('active');
+  state.screen = name;
+}
+
+// =========================================================
+// COMBO
+// =========================================================
+function comboMultiplier() {
+  const tier = Math.min(COMBO_TIERS.length - 1, Math.floor(state.streak / COMBO_TIER_SIZE));
+  return COMBO_TIERS[tier];
+}
+
+function updateComboBadge(bump) {
+  const badge = document.getElementById('combo-badge');
+  const mult = comboMultiplier();
+  if (mult > 1) {
+    badge.textContent = '×' + mult;
+    badge.classList.add('shown');
+    badge.setAttribute('data-tier', String(mult));
+    if (bump) {
+      badge.classList.remove('bump');
+      void badge.offsetWidth;
+      badge.classList.add('bump');
+    }
+  } else {
+    badge.classList.remove('shown', 'bump');
+    badge.removeAttribute('data-tier');
+  }
+}
+
+function updateDebugLabel() {
+  const el = document.getElementById('debug-label');
+  if (!DEBUG_LABEL || !state.current) {
+    el.classList.remove('shown');
+    return;
+  }
+  el.textContent = state.current.label === 'ai' ? t('dbg_ai') : t('dbg_real');
+  el.classList.add('shown');
+}
+
+function hideDebugLabel() {
+  document.getElementById('debug-label').classList.remove('shown');
+}
+
+function fireStreakBanner(mult) {
+  const b = document.getElementById('streak-banner');
+  b.textContent = 'STREAK ×' + mult;
+  [...b.classList].forEach(c => { if (c.startsWith('size-') || c === 'fire') b.classList.remove(c); });
+  if      (mult >= 262144) b.classList.add('size-256k');
+  else if (mult >= 131072) b.classList.add('size-128k');
+  else if (mult >= 65536)  b.classList.add('size-64k');
+  else if (mult >= 32768)  b.classList.add('size-32k');
+  else if (mult >= 16384)  b.classList.add('size-16k');
+  else if (mult >= 8192)   b.classList.add('size-8k');
+  else if (mult >= 4096)   b.classList.add('size-omega');
+  else if (mult >= 2048)   b.classList.add('size-transcendent');
+  else if (mult >= 1024)   b.classList.add('size-infinite');
+  else if (mult >= 512)    b.classList.add('size-mythic');
+  else if (mult >= 256)    b.classList.add('size-godlike');
+  else if (mult >= 128)    b.classList.add('size-ultimate');
+  else if (mult >= 64)     b.classList.add('size-legendary');
+  else if (mult >= 32)     b.classList.add('size-insane');
+  else if (mult >= 16)     b.classList.add('size-huge');
+  else if (mult >= 8)      b.classList.add('size-big');
+  else if (mult >= 4)      b.classList.add('size-mid');
+  void b.offsetWidth;
+  b.classList.add('fire');
+}
+
+function updateStageTier() {
+  const mult = comboMultiplier();
+  const stage = document.getElementById('image-stage');
+  const frame = document.querySelector('.game-frame');
+  if (mult > 1) {
+    stage.setAttribute('data-tier', String(mult));
+    frame.setAttribute('data-tier', String(mult));
+  } else {
+    stage.removeAttribute('data-tier');
+    frame.removeAttribute('data-tier');
+  }
+}
+
+// =========================================================
+// GAME LOOP
+// =========================================================
+async function startGame(mode) {
+  state.mode = mode === 'endless' ? 'endless' : 'classic';
+  state.lives = ENDLESS_LIVES;
+  document.getElementById('game').classList.toggle('mode-endless', state.mode === 'endless');
+  document.getElementById('game').classList.toggle('mode-classic', state.mode === 'classic');
+  updateLives();
+
+  sfx.prime();
+  sfx.click();
+
+  if (state.rafId) cancelAnimationFrame(state.rafId);
+  if (state.pendingNextId) clearTimeout(state.pendingNextId);
+  state.rafId = null;
+  state.pendingNextId = null;
+
+  state.score        = 0;
+  state.streak       = 0;
+  state.maxStreak    = 0;
+  state.correctCount = 0;
+  state.wrongCount   = 0;
+  state.perfectionAchieved = false;
+  state.timeLeftMs   = ROUND_DURATION_MS;
+  document.getElementById('end').classList.remove('perfection');
+  state.prevSec     = Math.ceil(ROUND_DURATION_MS / 1000);
+  state.busy        = false;
+
+  if (state.images.length === 0) {
+    state.images = await loadImages();
+  }
+  state.images    = shuffle(state.images);
+  state.deckIndex = 0;
+
+  preloadAll();
+
+  // ilk soruyu seç ve gizliyken yükle
+  pickNext();
+  const firstImg = new Image();
+  firstImg.src = resolveImageSrc(state.current);
+
+  const imgEl = document.getElementById('image');
+  imgEl.style.opacity = '0';
+  imgEl.removeAttribute('src');
+
+  updateScore();
+  updateTimer();
+  updateComboBadge(false);
+  updateStageTier();
+  setChoicesDisabled(true);
+
+  showScreen('game');
+
+  await runCountdown();
+
+  // ilk soruyu göster
+  imgEl.src = firstImg.src;
+  imgEl.style.opacity = '1';
+  state.questionStart = performance.now();
+  updateDebugLabel();
+  setChoicesDisabled(false);
+
+  // classic'te zamanı sayacak raf — endless'ta gerek yok
+  if (state.mode === 'classic') {
+    state.lastFrameTime = performance.now();
+    state.rafId = requestAnimationFrame(tick);
+  }
+}
+
+async function runCountdown() {
+  const cd = document.getElementById('countdown');
+  cd.classList.add('shown');
+  for (const step of ['3', '2', '1']) {
+    cd.innerHTML = '<div class="num">' + step + '</div>';
+    sfx.countdown();
+    await sleep(COUNTDOWN_STEP_MS);
+  }
+  cd.innerHTML = '<div class="go">GO</div>';
+  sfx.go();
+  await sleep(COUNTDOWN_STEP_MS);
+  cd.classList.remove('shown');
+  cd.innerHTML = '';
+}
+
+function tick(now) {
+  const dt = now - state.lastFrameTime;
+  state.lastFrameTime = now;
+  state.timeLeftMs -= dt;
+
+  if (state.timeLeftMs <= 0) {
+    state.timeLeftMs = 0;
+    updateTimer();
+    endGame();
+    return;
+  }
+
+  const secs = Math.ceil(state.timeLeftMs / 1000);
+  if (secs !== state.prevSec) {
+    if (secs > 0 && secs <= 5) sfx.tick();
+    state.prevSec = secs;
+  }
+
+  updateTimer();
+  state.rafId = requestAnimationFrame(tick);
+}
+
+function updateTimer() {
+  const secs = Math.ceil(state.timeLeftMs / 1000);
+  document.getElementById('timer').textContent = secs;
+  document.getElementById('timer-box').classList.toggle('low', secs > 0 && secs <= LOW_TIME_THRESHOLD_S);
+}
+
+function updateScore() {
+  document.getElementById('score').textContent = state.score;
+}
+
+function updateLives() {
+  const html = [];
+  for (let i = 0; i < ENDLESS_LIVES; i++) {
+    html.push('<span' + (i < state.lives ? '' : ' class="lost"') + '>&hearts;</span>');
+  }
+  document.getElementById('lives-box').innerHTML = html.join('');
+}
+
+function showNextQuestion() {
+  pickNext();
+  const img = document.getElementById('image');
+  img.style.opacity = '0';
+  hideDebugLabel();
+
+  const preload = new Image();
+  const swap = () => {
+    img.src = preload.src;
+    img.style.opacity = '1';
+    state.questionStart = performance.now();
+    updateDebugLabel();
+  };
+  preload.onload  = swap;
+  preload.onerror = swap;
+  preload.src = resolveImageSrc(state.current);
+}
+
+function setChoicesDisabled(disabled) {
+  document.querySelectorAll('.btn-choice').forEach(b => { b.disabled = disabled; });
+}
+
+function handleChoice(choice) {
+  if (state.busy || state.screen !== 'game' || state.timeLeftMs <= 0) return;
+
+  const correct = choice === state.current.label;
+  const elapsed = performance.now() - state.questionStart;
+
+  let delta, popClass;
+  let tierUp = false;
+  if (correct) {
+    const bonus = Math.max(0, SPEED_BONUS_MAX - elapsed / (SPEED_BONUS_WINDOW_MS / SPEED_BONUS_MAX));
+    const base = BASE_SCORE + bonus;
+    const prevMult = comboMultiplier();
+    state.streak++;
+    state.correctCount++;
+    if (state.streak > state.maxStreak) state.maxStreak = state.streak;
+    const newMult = comboMultiplier();
+    delta = Math.round(base * newMult);
+
+    tierUp = newMult > prevMult;
+    updateComboBadge(tierUp || newMult > 1);
+
+    if (tierUp && newMult > 1) {
+      fireStreakBanner(newMult);
+      if      (newMult >= 65536) sfx.streakInfinityPlus();
+      else if (newMult >= 8192)  sfx.streakBeyond();
+      else if (newMult >= 4096)  sfx.streakOmega();
+      else if (newMult >= 2048)  sfx.streakTranscendent();
+      else if (newMult >= 1024)  sfx.streakInfinite();
+      else if (newMult >= 512)   sfx.streakMythic();
+      else if (newMult >= 256)   sfx.streakGodlike();
+      else if (newMult >= 128)   sfx.streakUltimate();
+      else if (newMult >= 64)    sfx.streakLegendary();
+      else if (newMult >= 32)    sfx.streakInsane();
+      else if (newMult >= 16)    sfx.streakHuge();
+      else if (newMult >= 8)     sfx.streakBig();
+      else if (newMult >= 4)     sfx.streakMid();
+      else                       sfx.streakSmall();
+    } else {
+      sfx.correct();
+    }
+    updateStageTier();
+    popClass = newMult > 1 ? 'pop-combo' : 'pop-good';
+  } else {
+    delta = WRONG_SCORE_PENALTY;
+    if (state.mode === 'endless') {
+      state.lives = Math.max(0, state.lives - 1);
+      updateLives();
+    } else {
+      state.timeLeftMs = Math.max(0, state.timeLeftMs - WRONG_TIME_PENALTY_MS);
+      state.prevSec = Math.ceil(state.timeLeftMs / 1000);
+      updateTimer();
+    }
+    state.streak = 0;
+    state.wrongCount++;
+    updateComboBadge(false);
+    updateStageTier();
+    sfx.wrong();
+
+    const stage = document.getElementById('image-stage');
+    stage.classList.remove('shake');
+    void stage.offsetWidth;
+    stage.classList.add('shake');
+    popClass = 'pop-bad';
+  }
+
+  state.score += delta;
+  updateScore();
+  // tier-up'ta sadece streak banner gösterilsin, +delta popup'ı suppress et (üst üste binmesin)
+  flashFeedback(correct, delta, popClass, !tierUp);
+
+  state.busy = true;
+  setChoicesDisabled(true);
+
+  state.pendingNextId = setTimeout(() => {
+    state.pendingNextId = null;
+    state.busy = false;
+    if (state.screen !== 'game') return;
+    // 60/60 instant perfection (classic): süre kalmadan oyunu bitir
+    if (state.mode === 'classic' && state.correctCount >= 60 && state.wrongCount === 0) {
+      endGame();
+      return;
+    }
+    if (state.mode === 'endless') {
+      if (state.lives <= 0) { endGame(); return; }
+    } else {
+      if (state.timeLeftMs <= 0) return;  // raf will end
+    }
+    setChoicesDisabled(false);
+    showNextQuestion();
+  }, FEEDBACK_HOLD_MS);
+}
+
+function flashFeedback(correct, delta, popClass, showPop) {
+  const flash = document.getElementById('flash');
+  flash.classList.remove('flash-correct', 'flash-wrong');
+  void flash.offsetWidth;
+  flash.classList.add(correct ? 'flash-correct' : 'flash-wrong');
+
+  if (showPop === false) return;
+
+  const stage = document.getElementById('image-stage');
+  const pop = document.createElement('div');
+  pop.className = 'score-pop ' + popClass;
+  pop.textContent = (delta >= 0 ? '+' : '') + delta;
+  // dopamin: puan büyüdükçe font da büyür, ama stage genişliğini aşmasın
+  const absD = Math.abs(delta);
+  const stageW = stage.clientWidth || 600;
+  const desired = 90 + absD * 0.32;
+  const cap = stageW * 0.32;
+  const size = Math.max(40, Math.min(280, desired, cap));
+  pop.style.fontSize = size + 'px';
+  stage.appendChild(pop);
+  setTimeout(() => pop.remove(), 850);
+}
+
+function endGame() {
+  if (state.rafId) cancelAnimationFrame(state.rafId);
+  state.rafId = null;
+  if (state.pendingNextId) clearTimeout(state.pendingNextId);
+  state.pendingNextId = null;
+  state.busy = false;
+  setChoicesDisabled(false);
+
+  document.getElementById('final-score').textContent = state.score;
+
+  // istatistikler
+  const total = state.correctCount + state.wrongCount;
+  const acc = total > 0 ? Math.round(state.correctCount / total * 100) : 0;
+  document.getElementById('stat-correct').textContent  = state.correctCount;
+  document.getElementById('stat-total').textContent    = total;
+  document.getElementById('stat-streak').textContent   = state.maxStreak;
+  document.getElementById('stat-accuracy').textContent = acc + '%';
+
+  const endEl = document.getElementById('end');
+  endEl.classList.remove('perfection');
+  endEl.removeAttribute('data-vtier');
+
+  // PERFECTION: classic modda 60 doğru + 0 yanlış
+  const isPerfection = state.mode === 'classic' && state.correctCount >= 60 && state.wrongCount === 0;
+  state.perfectionAchieved = isPerfection;
+
+  if (isPerfection) {
+    endEl.classList.add('perfection');
+    sfx.jackpot();
+  } else {
+    const vt = getVictoryTier(state.score);
+    if (vt) {
+      endEl.setAttribute('data-vtier', vt.key);
+      document.getElementById('victory-label').setAttribute('data-i18n', vt.key);
+      applyLang();
+      const fn = sfx[vt.sound];
+      if (typeof fn === 'function') fn(); else sfx.end();
+    } else {
+      sfx.end();
+    }
+  }
+
+  // endless modu leaderboard'a girmez — direkt skor görür, sonra welcome
+  const qualifies = state.mode !== 'endless' && leaderboardQualifies(state.score) && state.score > 0;
+  const nameRow = document.getElementById('name-row');
+  if (isPerfection || qualifies) {
+    nameRow.classList.add('shown');
+    clearNameBoxes();
+    showNameError(false);
+    setTimeout(() => focusBox(0), 350);
+  } else {
+    nameRow.classList.remove('shown');
+  }
+  showScreen('end');
+}
+
+// =========================================================
+// LEADERBOARD
+// =========================================================
+function leaderboardQualifies(score) {
+  if (state.leaderboard.length < LEADERBOARD_SIZE) return true;
+  return score > state.leaderboard[state.leaderboard.length - 1].score;
+}
+
+async function loadLeaderboard() {
+  if (BIN_URL && API_KEY) {
+    try {
+      const res = await fetch(BIN_URL + '/latest', {
+        headers: { 'X-Master-Key': API_KEY, 'X-Bin-Meta': 'false' }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const record = data && (data.record !== undefined ? data.record : data);
+        const entries = Array.isArray(record) ? record : (Array.isArray(record?.entries) ? record.entries : null);
+        if (Array.isArray(entries)) {
+          state.leaderboard = sortAndCut(ensureSeed(entries));
+          try { localStorage.setItem(LB_STORAGE_KEY, JSON.stringify(state.leaderboard)); } catch (e) {}
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('JSONBin okuma başarısız, localStorage\'a düşüyor:', e.message);
+    }
+  }
+  try {
+    const local = JSON.parse(localStorage.getItem(LB_STORAGE_KEY) || '[]');
+    state.leaderboard = sortAndCut(ensureSeed(Array.isArray(local) ? local : []));
+  } catch (e) {
+    state.leaderboard = sortAndCut(ensureSeed([]));
+  }
+}
+
+async function saveLeaderboard() {
+  try { localStorage.setItem(LB_STORAGE_KEY, JSON.stringify(state.leaderboard)); } catch (e) {}
+  if (BIN_URL && API_KEY) {
+    try {
+      await fetch(BIN_URL, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY },
+        body: JSON.stringify({ entries: state.leaderboard })
+      });
+    } catch (e) { console.warn('JSONBin yazma başarısız:', e.message); }
+  }
+}
+
+function sortAndCut(arr) {
+  return arr
+    .filter(e => e && typeof e.score === 'number' && typeof e.name === 'string')
+    .sort((a, b) => b.score - a.score)
+    .slice(0, LEADERBOARD_SIZE);
+}
+
+// "House" / seed kayıt — geçilebilen ama her zaman var olan tepe skor
+const SEED_ENTRIES = [];
+function ensureSeed(arr) {
+  const list = Array.isArray(arr) ? arr.slice() : [];
+  SEED_ENTRIES.forEach(s => {
+    const dup = list.some(e => e && e.name === s.name && e.score === s.score);
+    if (!dup) list.push({ ...s });
+  });
+  return list;
+}
+
+function renderLeaderboard() {
+  const list = document.getElementById('leaderboard-list');
+  const rows = [];
+  for (let i = 0; i < LEADERBOARD_SIZE; i++) {
+    const e = state.leaderboard[i];
+    const name  = e ? e.name  : '---';
+    const score = e ? e.score : 0;
+    const cls   = e ? ((e.perfection ? ' perfect' : '') + (e.endless ? ' endless-mark' : '')) : '';
+    rows.push(
+      '<div class="row' + cls + '">' +
+        '<span class="rank">' + (i + 1) + '</span>' +
+        '<span class="name">' + name + '</span>' +
+        '<span class="score">' + score + '</span>' +
+      '</div>'
+    );
+  }
+  list.innerHTML = rows.join('');
+}
+
+function getNameBoxes() {
+  return Array.from(document.querySelectorAll('.name-box'));
+}
+
+function getNameFromBoxes() {
+  return getNameBoxes().map(b => b.value).join('').toUpperCase();
+}
+
+function clearNameBoxes() {
+  getNameBoxes().forEach(b => b.value = '');
+}
+
+function focusBox(i) {
+  const boxes = getNameBoxes();
+  if (i >= 0 && i < boxes.length) {
+    boxes[i].focus();
+    try { boxes[i].select(); } catch (e) {}
+  }
+}
+
+async function submitScoreIfNeeded() {
+  const nameRow = document.getElementById('name-row');
+  if (!nameRow.classList.contains('shown')) return true;
+
+  const raw = getNameFromBoxes();
+  const clean = sanitizeName(raw);
+
+  if (clean.length > 0 && isBlockedName(clean)) {
+    showNameError(true);
+    return false;
+  }
+
+  // isim girilmediyse leaderboard'a ekleme
+  if (clean.length === 0) return true;
+
+  const name = clean.padEnd(3, '-');
+  const entry = { name, score: state.score };
+  if (state.perfectionAchieved) entry.perfection = true;
+  if (state.mode === 'endless')  entry.endless = true;
+  state.leaderboard.push(entry);
+  state.leaderboard = sortAndCut(state.leaderboard);
+  await saveLeaderboard();
+  return true;
+}
+
+function showNameError(on) {
+  document.getElementById('name-error').classList.toggle('shown', on);
+  getNameBoxes().forEach(b => b.classList.toggle('blocked', on));
+}
+
+async function resetLeaderboard() {
+  state.leaderboard = sortAndCut(ensureSeed([]));
+  await saveLeaderboard();
+  renderLeaderboard();
+}
+
+// =========================================================
+// WIRING
+// =========================================================
+document.getElementById('btn-start').addEventListener('click', () => startGame('classic'));
+document.getElementById('btn-endless').addEventListener('click', () => startGame('endless'));
+
+// mobil scoreboard slide toggle
+(function () {
+  const welcome = document.getElementById('welcome');
+  const showBtn = document.getElementById('show-board-btn');
+  const backBtn = document.getElementById('back-from-board');
+  if (showBtn) showBtn.addEventListener('click', () => { sfx.click(); welcome.classList.add('board-shown'); });
+  if (backBtn) backBtn.addEventListener('click', () => { sfx.click(); welcome.classList.remove('board-shown'); });
+})();
+
+document.querySelectorAll('.btn-choice').forEach(btn => {
+  btn.addEventListener('click', () => handleChoice(btn.dataset.choice));
+});
+
+document.getElementById('btn-restart').addEventListener('click', async () => {
+  sfx.click();
+  const ok = await submitScoreIfNeeded();
+  if (!ok) return;  // blocked name, kal end ekranında
+  renderLeaderboard();
+  showScreen('welcome');
+});
+
+// 3-kutu isim girişi: auto-advance + backspace geri + canlı blocklist
+getNameBoxes().forEach((box, idx) => {
+  box.addEventListener('input', (e) => {
+    let v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (v.length > 1) {
+      // birden fazla karakter girildi → kutulara dağıt
+      const boxes = getNameBoxes();
+      for (let i = idx, j = 0; i < boxes.length && j < v.length; i++, j++) {
+        boxes[i].value = v[j];
+      }
+      focusBox(Math.min(boxes.length - 1, idx + v.length));
+    } else {
+      e.target.value = v;
+      if (v.length === 1 && idx < 2) focusBox(idx + 1);
+    }
+    const full = getNameFromBoxes();
+    showNameError(full.length > 0 && isBlockedName(full));
+  });
+
+  box.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace' && !box.value && idx > 0) {
+      e.preventDefault();
+      const prev = getNameBoxes()[idx - 1];
+      prev.value = '';
+      focusBox(idx - 1);
+      showNameError(false);
+    } else if (e.key === 'ArrowLeft' && idx > 0) {
+      e.preventDefault(); focusBox(idx - 1);
+    } else if (e.key === 'ArrowRight' && idx < 2) {
+      e.preventDefault(); focusBox(idx + 1);
+    }
+  });
+});
+
+// reset: logo'ya 5 tıkla (3sn içinde) → onay → temizle
+let _logoTaps = 0;
+let _logoTapTimer = null;
+document.querySelector('.logo').addEventListener('click', () => {
+  _logoTaps++;
+  clearTimeout(_logoTapTimer);
+  _logoTapTimer = setTimeout(() => { _logoTaps = 0; }, 3000);
+  if (_logoTaps >= 5) {
+    _logoTaps = 0;
+    sfx.click();
+    document.getElementById('reset-modal').classList.add('shown');
+  }
+});
+document.getElementById('reset-cancel').addEventListener('click', () => {
+  sfx.click();
+  document.getElementById('reset-modal').classList.remove('shown');
+});
+document.getElementById('reset-confirm').addEventListener('click', async () => {
+  sfx.click();
+  await resetLeaderboard();
+  document.getElementById('reset-modal').classList.remove('shown');
+});
+document.getElementById('reset-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'reset-modal') document.getElementById('reset-modal').classList.remove('shown');
+});
+
+document.addEventListener('gesturestart', e => e.preventDefault());
+document.addEventListener('touchmove', e => {
+  if (e.touches.length > 1) e.preventDefault();
+}, { passive: false });
+
+document.addEventListener('visibilitychange', () => {
+  if (state.screen !== 'game') return;
+  if (document.hidden) {
+    if (state.rafId) cancelAnimationFrame(state.rafId);
+    state.rafId = null;
+  } else {
+    state.lastFrameTime = performance.now();
+    if (!state.rafId && state.timeLeftMs > 0) state.rafId = requestAnimationFrame(tick);
+  }
+});
+
+// =========================================================
+// SETTINGS UI
+// =========================================================
+function updateSoundToggle() {
+  const btn = document.getElementById('toggle-sound');
+  const labelSpan = btn.querySelector('span');
+  btn.classList.toggle('on', state.soundEnabled);
+  labelSpan.textContent = state.soundEnabled ? t('on') : t('off');
+  labelSpan.setAttribute('data-i18n', state.soundEnabled ? 'on' : 'off');
+}
+
+function _resetModalPanes() {
+  document.getElementById('settings-content').classList.add('hidden');
+  document.getElementById('credits-content').classList.remove('shown');
+  document.getElementById('tech-content').classList.remove('shown');
+  document.getElementById('fn-content').classList.remove('shown');
+}
+
+function openSettings() {
+  document.getElementById('settings-modal').classList.add('shown');
+  _resetModalPanes();
+  document.getElementById('settings-content').classList.remove('hidden');
+  document.getElementById('modal-back').classList.remove('shown');
+  document.getElementById('modal-title').setAttribute('data-i18n', 'settings');
+  applyLang();
+  updateSoundToggle();
+}
+
+function closeSettings() {
+  document.getElementById('settings-modal').classList.remove('shown');
+}
+
+function showCredits() {
+  _resetModalPanes();
+  document.getElementById('credits-content').classList.add('shown');
+  document.getElementById('modal-back').classList.remove('shown');
+  document.getElementById('modal-title').setAttribute('data-i18n', 'credits');
+  applyLang();
+}
+
+function showTech() {
+  _resetModalPanes();
+  document.getElementById('tech-content').classList.add('shown');
+  document.getElementById('modal-back').classList.add('shown');
+  document.getElementById('modal-title').setAttribute('data-i18n', 'tech');
+  applyLang();
+}
+
+function showFunctions() {
+  _resetModalPanes();
+  document.getElementById('fn-content').classList.add('shown');
+  document.getElementById('modal-back').classList.add('shown');
+  document.getElementById('modal-title').setAttribute('data-i18n', 'functions');
+  applyLang();
+}
+
+document.getElementById('btn-settings').addEventListener('click', () => { sfx.click(); openSettings(); });
+document.getElementById('modal-close').addEventListener('click', () => { sfx.click(); closeSettings(); });
+document.getElementById('settings-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'settings-modal') closeSettings();
+});
+document.getElementById('toggle-sound').addEventListener('click', () => {
+  state.soundEnabled = !state.soundEnabled;
+  saveSettings();
+  updateSoundToggle();
+  if (state.soundEnabled) sfx.click();
+});
+document.querySelectorAll('.lang-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    sfx.click();
+    state.lang = b.dataset.lang;
+    saveSettings();
+    applyLang();
+    updateSoundToggle();  // re-apply sound label
+  });
+});
+document.querySelectorAll('.theme-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    state.theme = b.dataset.theme;
+    saveSettings();
+    applyTheme();
+    sfx.click();
+  });
+});
+document.getElementById('open-credits').addEventListener('click', () => { sfx.click(); showCredits(); });
+document.getElementById('open-tech').addEventListener('click', () => { sfx.click(); showTech(); });
+document.getElementById('open-fn').addEventListener('click', () => { sfx.click(); showFunctions(); });
+document.getElementById('modal-back').addEventListener('click', () => { sfx.click(); showCredits(); });
+
+// =========================================================
+// INIT + SW
+// =========================================================
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(err => console.warn('SW register fail:', err));
+  });
+}
+
+(async function init() {
+  loadSettings();
+  applyTheme();
+  applyLang();
+  document.getElementById('version-tag').textContent = BUILD;
+  await loadLeaderboard();
+  renderLeaderboard();
+  // arka planda görselleri çek — etkinlikte offline da çalışsın
+  loadImages().then(list => { state.images = list; preloadAll(); });
+})();
+
+})();
+</script>
+
+</body>
+</html>
