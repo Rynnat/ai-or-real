@@ -91,7 +91,7 @@ def main():
                 print(f'           ⚠ küçük yanıt ({len(content)}B) — atlandı')
                 continue
             content = strip_exif(content)
-            dest = IMG_DIR / f'{idx:02d}.jpg'
+            dest = IMG_DIR / f'{idx:03d}.jpg'
             dest.write_bytes(content)
             new_data.append({'f': dest.name, 'k': e['k']})
             idx += 1

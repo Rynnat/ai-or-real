@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0a0a0f">
+<meta name="theme-color" content="#f0f0e9">
 <title>AI or Real</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
@@ -22,7 +22,7 @@
 }
 
 :root {
-  --bg: #0a0a0f;
+  --bg: #f0f0e9;
   --bg-elevated: #14141c;
   --fg: #e8e8f0;
   --fg-muted: #6a6a7a;
@@ -152,55 +152,26 @@ html, body {
   margin-right: 6px;
 }
 
-/* mobil scoreboard toggle — kenar chevron butonları */
-.edge-toggle {
-  display: none;
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 38px; height: 70px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--accent);
-  color: var(--accent);
-  font-size: 22px;
-  font-weight: 800;
-  cursor: pointer;
-  z-index: 50;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 0 16px rgba(var(--accent-rgb), 0.3);
-  transition: transform var(--transition);
-}
-.edge-toggle:active { transform: translateY(-50%) scale(0.92); }
-.edge-toggle.right { right: 0; border-right: none; border-radius: 8px 0 0 8px; }
-.edge-toggle.left  { left: 0;  border-left:  none; border-radius: 0 8px 8px 0; }
-
+/* Mobil başlangıç: tek ekran, skor paneline yan geçiş yok. */
 @media (max-width: 720px) {
   #welcome {
     overflow: hidden;
     padding: 32px 0;
-    align-items: flex-start;  /* center yapınca 200% wide grid taşıyordu */
+    align-items: center;
   }
   .welcome-grid {
-    grid-template-columns: 1fr 1fr;
-    width: 200%;
+    grid-template-columns: 1fr;
+    width: 100%;
     max-width: none;
     gap: 0;
     height: 100%;
-    transition: transform 320ms cubic-bezier(.22,1,.36,1);
   }
-  .welcome-left, .welcome-right {
-    display: flex;
+  .welcome-left {
     width: 100%;
     padding: 0 32px;
     justify-content: center;
   }
-  #welcome.board-shown .welcome-grid { transform: translateX(-50%); }
-
-  .edge-toggle.right { display: flex; }
-  .edge-toggle.left  { display: none; }
-  #welcome.board-shown .edge-toggle.right { display: none; }
-  #welcome.board-shown .edge-toggle.left  { display: flex; }
+  .welcome-right { display: none; }
 }
 
 .logo {
@@ -285,12 +256,11 @@ html, body {
   justify-content: center;
 }
 
-/* 4:3 playfield: ekran ne kadar geniş olursa olsun
-   stage 4/3 oranda kalır, yan boşluklar koyu kalır */
+/* Kare görsel sahnesi: kaynak görsellerle çerçeve aynı oranda kalır. */
 .game-frame {
   flex: 1 1 auto;
   width: 100%;
-  max-width: min(1100px, calc((100dvh - 240px) * 4 / 3));
+  max-width: min(720px, calc(100dvh - 240px));
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -303,11 +273,7 @@ html, body {
   .game-frame {
     max-width: 100%;
   }
-  .image-stage {
-    aspect-ratio: auto;
-    flex: 1 1 0;
-    min-height: 0;
-  }
+  .image-stage { aspect-ratio:4/3; flex:0 1 auto; min-height:0; }
   .btn-choice {
     font-size: 18px;
     letter-spacing: 3px;
@@ -1277,6 +1243,18 @@ html, body {
 }
 .name-error.shown { display: block; }
 
+.backup-status {
+  display: none;
+  color: var(--fg-muted);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  text-align: right;
+  margin-top: -6px;
+}
+.backup-status.shown { display: block; }
+.backup-status.error { color: var(--danger); }
+
 /* reset confirm modal */
 .reset-actions {
   display: flex;
@@ -1333,6 +1311,16 @@ html, body {
   border-color: var(--accent);
   color: var(--accent);
 }
+.btn-secondary:disabled {
+  cursor: not-allowed;
+  opacity: .58;
+  filter: saturate(.45);
+}
+.dev-game-controls { display:none; position:absolute; z-index:20; top:14px; left:14px; gap:6px; }
+body.dev-mode #game.mode-classic .dev-game-controls { display:flex; }
+.dev-game-btn { min-height:34px; padding:7px 11px; border:1px solid var(--border); border-radius:3px; background:color-mix(in srgb,var(--bg-elevated) 90%,transparent); color:var(--fg); font:700 10px var(--font-mono); letter-spacing:1.2px; cursor:pointer; }
+.dev-game-btn:first-child { border-color:var(--danger); color:var(--danger); }
+.dev-game-btn:active { transform:scale(.96); }
 
 /* ================= SETTINGS / VERSION ================= */
 .gear-btn {
@@ -1390,6 +1378,7 @@ html, body {
   border-radius: 4px;
 }
 .modal::-webkit-scrollbar-thumb:hover { background: var(--fg-muted); }
+body.dev-mode .modal { max-height:96vh; }
 
 .modal-header {
   display: grid;
@@ -1418,6 +1407,8 @@ html, body {
 }
 .modal-back.shown { visibility: visible; }
 .modal-back:active { color: var(--accent); }
+.modal-back.dev-trigger { font-size:18px; filter:grayscale(1); opacity:.62; }
+.modal-back.dev-trigger.active { color:var(--accent); filter:none; opacity:1; }
 
 .modal-close {
   background: transparent;
@@ -1433,13 +1424,16 @@ html, body {
 .modal-close:active { color: var(--accent); }
 
 .settings-row {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 142px minmax(0, 1fr);
+  column-gap: 12px;
   align-items: center;
-  padding: 14px 0;
+  padding: 7px 0;
   border-bottom: 1px solid var(--border);
 }
 .settings-row:last-child { border-bottom: none; }
+.settings-row.dev-setting { display:none; }
+body.dev-mode .settings-row.dev-setting { display:grid; }
 
 .settings-label {
   font-size: 14px;
@@ -1469,8 +1463,21 @@ html, body {
   border-color: var(--accent);
 }
 .toggle-pill:active { transform: scale(0.95); }
+.sfx-control { display:flex; align-items:center; justify-content:flex-start; gap:12px; }
+.sound-switch { width:48px; min-width:48px; height:26px; padding:2px; border-radius:999px; position:relative; letter-spacing:0; }
+.sound-switch span { position:absolute; width:18px; height:18px; left:3px; top:2px; border-radius:50%; background:var(--fg-muted); font-size:0; transition:transform var(--transition),background var(--transition); }
+.sound-switch.on span { transform:translateX(20px); background:var(--bg); }
+.volume-meter { height:30px; display:flex; align-items:flex-end; gap:4px; }
+.volume-bar { width:11px; padding:0; border:1px solid var(--border); background:transparent; cursor:pointer; border-radius:1px; }
+.volume-bar:nth-child(1) { height:10px; }
+.volume-bar:nth-child(2) { height:14px; }
+.volume-bar:nth-child(3) { height:18px; }
+.volume-bar:nth-child(4) { height:23px; }
+.volume-bar:nth-child(5) { height:28px; }
+.volume-bar.active { background:var(--accent); border-color:var(--accent); }
+.volume-meter.muted .volume-bar { opacity:.32; }
 
-.theme-group { display: flex; gap: 8px; }
+.theme-group { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); width:100%; gap:8px; }
 .theme-btn {
   background: var(--bg);
   border: 2px solid var(--border);
@@ -1486,11 +1493,89 @@ html, body {
   transition: all var(--transition);
   line-height: 1;
 }
-.theme-btn.active {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.28);
+.theme-btn[data-theme="lab"], .theme-btn[data-theme="arcade"] {
+  width: auto;
+  min-width: 112px;
+  padding: 0 12px;
+  border-radius: 2px;
+  gap: 7px;
+  font: 700 11px var(--font-mono);
+  letter-spacing: .5px;
 }
+.theme-btn[data-theme="signal"], .theme-btn[data-theme="archive"], .theme-btn[data-theme="spectrum"], .theme-btn[data-theme="orbit"] {
+  width:auto; min-width:112px; padding:0 12px; border-radius:2px; gap:7px; font:700 11px var(--font-mono); letter-spacing:.5px;
+}
+.theme-group .theme-btn { width:100%; min-width:0; height:38px; padding:0 7px; font-size:10px; }
+.theme-btn[data-theme="lab"] { color:#191e1b; background:#f0f0e9; border-color:#c6c9bd; }
+.theme-btn[data-theme="arcade"] { color:#00cc6a; background:#0a0a0f; border-color:#2a2a3a; }
+.theme-btn[data-theme="signal"] { color:#f1df57; background:#2647d7; border-color:#17319d; }
+.theme-btn[data-theme="archive"] { color:#0a0a0f; background:#c7a873; border-color:#8f774f; }
+.theme-btn[data-theme="spectrum"] { color:#24182b; background:#e65a42; border-color:#24182b; }
+.theme-btn[data-theme="orbit"] { color:#16b8c4; background:#0a0a0f; border-color:#16b8c4; }
+.theme-btn.active {
+  border-color: #4f70d8;
+  box-shadow: 0 0 0 3px rgba(79, 112, 216, .32);
+}
+.theme-btn:focus-visible { outline: 3px solid #4f70d8; outline-offset: 3px; }
 .theme-btn:active { transform: scale(0.92); }
+
+.option-group { display: flex; width: 100%; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.color-group { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:4px; }
+.sound-theme-group { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; width:100%; }
+.sound-theme-btn { min-width:0; display:flex; align-items:center; justify-content:center; gap:6px; }
+.vfx-group { justify-content: flex-start; }
+.option-btn {
+  min-height: 40px;
+  padding: 8px 12px;
+  background: var(--bg);
+  color: var(--fg-muted);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  font: 700 10px var(--font-mono);
+  letter-spacing: .6px;
+  cursor: pointer;
+}
+.option-btn.active { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.option-btn:active { transform: scale(.96); }
+.sound-theme-group .sound-theme-btn[data-sound-theme="evidence"] { color:#191e1b; background:#f0f0e9; border-color:#c6c9bd; }
+.sound-theme-group .sound-theme-btn[data-sound-theme="arcade"] { color:#00cc6a; background:#0a0a0f; border-color:#2a2a3a; }
+.sound-theme-group .sound-theme-btn[data-sound-theme="signal"] { color:#f1df57; background:#2647d7; border-color:#17319d; }
+.sound-theme-group .sound-theme-btn[data-sound-theme="archive"] { color:#0a0a0f; background:#c7a873; border-color:#8f774f; }
+.sound-theme-group .sound-theme-btn[data-sound-theme="spectrum"] { color:#24182b; background:#e65a42; border-color:#24182b; }
+.sound-theme-group .sound-theme-btn[data-sound-theme="orbit"] { color:#16b8c4; background:#0a0a0f; border-color:#16b8c4; }
+.sound-theme-group .sound-theme-btn.active { box-shadow:0 0 0 3px rgba(79,112,216,.32); border-color:#4f70d8; }
+.color-btn { width:100%; min-width:0; min-height:32px; padding:4px; }
+.color-swatch { width:20px; height:20px; display:block; margin:auto; border-radius:50%; border:1px solid #7778; }
+.color1-btn[data-color1="paper"] .color-swatch,
+.color2-btn[data-color2="paper"] .color-swatch { background:var(--swatch-paper); }
+.color1-btn[data-color1="ink"] .color-swatch,
+.color2-btn[data-color2="ink"] .color-swatch { background:var(--swatch-ink); }
+.color1-btn[data-color1="cobalt"] .color-swatch,
+.color2-btn[data-color2="cobalt"] .color-swatch { background:var(--swatch-cobalt); }
+.color1-btn[data-color1="butter"] .color-swatch,
+.color2-btn[data-color2="butter"] .color-swatch { background:var(--swatch-butter); }
+.color1-btn[data-color1="coral"] .color-swatch,
+.color2-btn[data-color2="coral"] .color-swatch { background:var(--swatch-coral); }
+.color1-btn[data-color1="violet"] .color-swatch,
+.color2-btn[data-color2="violet"] .color-swatch { background:var(--swatch-violet); }
+.color1-btn[data-color1="cyan"] .color-swatch,
+.color2-btn[data-color2="cyan"] .color-swatch { background:var(--swatch-cyan); }
+.color1-btn[data-color1="forest"] .color-swatch,
+.color2-btn[data-color2="forest"] .color-swatch { background:var(--swatch-forest); }
+.color1-btn[data-color1="rose"] .color-swatch,
+.color2-btn[data-color2="rose"] .color-swatch { background:var(--swatch-rose); }
+.color1-btn[data-color1="sand"] .color-swatch,
+.color2-btn[data-color2="sand"] .color-swatch { background:var(--swatch-sand); }
+.color1-btn[data-color1="neon"] .color-swatch,
+.color2-btn[data-color2="neon"] .color-swatch { background:var(--swatch-neon); }
+@media (max-width: 520px) {
+  .settings-row { grid-template-columns: 102px minmax(0, 1fr); column-gap: 8px; }
+  .settings-row.settings-grid-row { grid-template-columns:1fr; row-gap:8px; }
+  .settings-label { font-size: 11px; letter-spacing: 2px; }
+  .vfx-group { flex-wrap:nowrap; gap:4px; }
+  .vfx-group .option-btn { min-width:0; padding:8px 7px; }
+  .dev-game-controls { top:auto; bottom:10px; left:10px; }
+}
 
 .lang-group { display: flex; gap: 6px; }
 .lang-btn {
@@ -1567,24 +1652,10 @@ html, body {
 
 .settings-content.hidden { display: none; }
 
-/* version tag — sağ alt köşede minicik */
-.version-tag {
-  position: fixed;
-  bottom: 6px;
-  right: 8px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 400;
-  color: var(--fg-muted);
-  opacity: 0.35;
-  letter-spacing: 1px;
-  z-index: 1;
-  pointer-events: none;
-  user-select: none;
-}
 </style>
+<link rel="stylesheet" href="lab.css?v=0.2.0">
 </head>
-<body>
+<body class="lab-theme">
 
 <div id="app">
 
@@ -1593,13 +1664,12 @@ html, body {
     <button class="gear-btn" id="btn-settings" aria-label="settings">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </button>
-    <button class="edge-toggle right" id="show-board-btn" aria-label="scoreboard">▶</button>
-    <button class="edge-toggle left"  id="back-from-board" aria-label="back">◀</button>
     <div class="welcome-grid" id="welcome-grid">
       <div class="welcome-left">
-        <div class="logo">AI <span class="or">or</span> REAL</div>
-        <div class="tagline" data-i18n="tagline">YAPAY ZEKA mı &nbsp;·&nbsp; GERÇEK mi</div>
-        <button class="btn-primary" id="btn-start" data-i18n="start">BAŞLA</button>
+        <div class="logo">AI <span class="or">or</span><br>REAL<span class="lab-dot">.</span></div>
+        <div class="tagline">v0.2.0</div>
+        <div class="lab-ruler" aria-hidden="true"></div>
+        <button class="btn-primary" id="btn-start" data-i18n="start">KLASİK</button>
         <button class="btn-endless" id="btn-endless"><span class="infinity">∞</span><span data-i18n="endless">SONSUZ MOD</span></button>
       </div>
       <div class="welcome-right">
@@ -1613,6 +1683,10 @@ html, body {
 
   <!-- ============ GAME ============ -->
   <section id="game" class="screen">
+    <div class="dev-game-controls" aria-label="Geliştirici oyun kontrolleri">
+      <button class="dev-game-btn" id="dev-finish" data-i18n="devFinish">BİTİR</button>
+      <button class="dev-game-btn" id="dev-exit" data-i18n="devExit">ÇIKIŞ</button>
+    </div>
     <div class="game-frame">
       <div class="hud">
         <div class="timer" id="timer-box"><span id="timer">60</span><span class="unit" data-i18n="sec">sn</span></div>
@@ -1659,7 +1733,7 @@ html, body {
       </div>
     </div>
     <div class="name-input-row" id="name-row">
-      <div class="end-label" data-i18n="enterName">TOP 5'E GİRDİN · İSMİNİ GİR</div>
+      <div class="end-label" data-i18n="enterName">TOP 10'A GİRDİN · İSMİNİ GİR</div>
       <div class="name-boxes">
         <input class="name-box" maxlength="1" data-pos="0" autocomplete="off" inputmode="text" autocapitalize="characters">
         <input class="name-box" maxlength="1" data-pos="1" autocomplete="off" inputmode="text" autocapitalize="characters">
@@ -1681,18 +1755,77 @@ html, body {
       <button class="modal-close" id="modal-close" aria-label="close">×</button>
     </div>
     <div class="settings-content" id="settings-content">
-      <div class="settings-row">
-        <span class="settings-label" data-i18n="sound">SES</span>
-        <button class="toggle-pill on" id="toggle-sound"><span data-i18n="on">AÇIK</span></button>
+      <div class="settings-row settings-grid-row dev-setting">
+        <span class="settings-label" data-i18n="theme">TEMA</span>
+        <div class="theme-group" aria-label="Tema seçenekleri">
+          <button class="theme-btn" data-theme="lab" title="Evidence / Algı Laboratuvarı">⌁ <span data-i18n="themeLab">EVIDENCE</span></button>
+          <button class="theme-btn" data-theme="arcade" title="Neon Arcade">◆ <span data-i18n="themeArcade">ARCADE</span></button>
+          <button class="theme-btn" data-theme="signal" title="Signal">◉ <span data-i18n="themeSignal">SIGNAL</span></button>
+          <button class="theme-btn" data-theme="archive" title="Archive">▤ <span data-i18n="themeArchive">ARCHIVE</span></button>
+          <button class="theme-btn" data-theme="spectrum" title="Spectrum">✦ <span data-i18n="themeSpectrum">SPECTRUM</span></button>
+          <button class="theme-btn" data-theme="orbit" title="Orbit">◎ <span data-i18n="themeOrbit">ORBIT</span></button>
+        </div>
+      </div>
+      <div class="settings-row settings-grid-row dev-setting">
+        <span class="settings-label" data-i18n="themeSound">TEMA SFX</span>
+        <div class="sound-theme-group" aria-label="Tema SFX paketleri">
+          <button class="option-btn sound-theme-btn" data-sound-theme="evidence">⌁ <span data-i18n="soundEvidence">EVIDENCE</span></button>
+          <button class="option-btn sound-theme-btn" data-sound-theme="arcade">◆ <span data-i18n="soundArcade">ARCADE</span></button>
+          <button class="option-btn sound-theme-btn" data-sound-theme="signal">◉ <span data-i18n="soundSignal">SIGNAL</span></button>
+          <button class="option-btn sound-theme-btn" data-sound-theme="archive">▤ <span data-i18n="soundArchive">ARCHIVE</span></button>
+          <button class="option-btn sound-theme-btn" data-sound-theme="spectrum">✦ <span data-i18n="soundSpectrum">SPECTRUM</span></button>
+          <button class="option-btn sound-theme-btn" data-sound-theme="orbit">◎ <span data-i18n="soundOrbit">ORBIT</span></button>
+        </div>
+      </div>
+      <div class="settings-row settings-grid-row dev-setting">
+        <span class="settings-label" data-i18n="color1">RENK 1</span>
+        <div class="option-group color-group" aria-label="Renk 1">
+          <button class="option-btn color-btn color1-btn" data-color1="paper" title="Kâğıt"><span class="color-swatch"></span></button>
+          <button class="option-btn color-btn color1-btn" data-color1="ink" title="Mürekkep"><span class="color-swatch"></span></button>
+          <button class="option-btn color-btn color1-btn" data-color1="cobalt" title="Kobalt"><span class="color-swatch"></span></button>
+          <button class="option-btn color-btn color1-btn" data-color1="butter" title="Sarı"><span class="color-swatch"></span></button>
+          <button class="option-btn color-btn color1-btn" data-color1="coral" title="Mercan"><span class="color-swatch"></span></button>
+          <button class="option-btn color-btn color1-btn" data-color1="violet" title="Menekşe"><span class="color-swatch"></span></button>
+          <button class="option-btn color-btn color1-btn" data-color1="cyan" title="Camgöbeği"><span class="color-swatch"></span></button>
+          <button class="option-btn color-btn color1-btn" data-color1="rose" title="Gül"><span class="color-swatch"></span></button>
+          <button class="option-btn color-btn color1-btn" data-color1="sand" title="Kum"><span class="color-swatch"></span></button>
+          <button class="option-btn color-btn color1-btn" data-color1="neon" title="Neon"><span class="color-swatch"></span></button>
+        </div>
+      </div>
+      <div class="settings-row settings-grid-row dev-setting">
+        <span class="settings-label" data-i18n="color2">RENK 2</span>
+        <div class="option-group color-group" aria-label="Renk 2">
+          <button class="option-btn color-btn color2-btn" data-color2="paper" title="Kâğıt"><span class="color-swatch"></span></button>
+          <button class="option-btn color-btn color2-btn" data-color2="ink" title="Mürekkep"><span class="color-swatch"></span></button>
+          <button class="option-btn color-btn color2-btn" data-color2="cobalt" title="Kobalt"><span class="color-swatch"></span></button>
+          <button class="option-btn color-btn color2-btn" data-color2="butter" title="Sarı"><span class="color-swatch"></span></button>
+          <button class="option-btn color-btn color2-btn" data-color2="coral" title="Mercan"><span class="color-swatch"></span></button>
+          <button class="option-btn color-btn color2-btn" data-color2="violet" title="Menekşe"><span class="color-swatch"></span></button>
+          <button class="option-btn color-btn color2-btn" data-color2="cyan" title="Camgöbeği"><span class="color-swatch"></span></button>
+          <button class="option-btn color-btn color2-btn" data-color2="rose" title="Gül"><span class="color-swatch"></span></button>
+          <button class="option-btn color-btn color2-btn" data-color2="sand" title="Kum"><span class="color-swatch"></span></button>
+          <button class="option-btn color-btn color2-btn" data-color2="neon" title="Neon"><span class="color-swatch"></span></button>
+        </div>
       </div>
       <div class="settings-row">
-        <span class="settings-label" data-i18n="theme">TEMA</span>
-        <div class="theme-group">
-          <button class="theme-btn" data-theme="apple"     title="Yeşil Elma">🍏</button>
-          <button class="theme-btn" data-theme="grape"     title="Üzüm">🍇</button>
-          <button class="theme-btn" data-theme="cherry"    title="Kiraz">🍒</button>
-          <button class="theme-btn" data-theme="blueberry" title="Yaban Mersini">🫐</button>
-          <button class="theme-btn" data-theme="lemon"     title="Limon">🍋</button>
+        <span class="settings-label" data-i18n="sound">GENEL SFX</span>
+        <div class="sfx-control">
+          <button class="toggle-pill sound-switch on" id="toggle-sound" role="switch" aria-checked="true" aria-label="SFX"><span data-i18n="on">AÇIK</span></button>
+          <div class="volume-meter" id="volume-meter" aria-label="SFX ses seviyesi">
+            <button class="volume-bar" data-volume="1" aria-label="Ses seviyesi 1"></button>
+            <button class="volume-bar" data-volume="2" aria-label="Ses seviyesi 2"></button>
+            <button class="volume-bar" data-volume="3" aria-label="Ses seviyesi 3"></button>
+            <button class="volume-bar" data-volume="4" aria-label="Ses seviyesi 4"></button>
+            <button class="volume-bar" data-volume="5" aria-label="Ses seviyesi 5"></button>
+          </div>
+        </div>
+      </div>
+      <div class="settings-row">
+        <span class="settings-label" data-i18n="vfx">GENEL VFX</span>
+        <div class="option-group vfx-group">
+          <button class="option-btn vfx-btn" data-vfx="off" data-i18n="off">KAPALI</button>
+          <button class="option-btn vfx-btn" data-vfx="soft" data-i18n="soft">SADE</button>
+          <button class="option-btn vfx-btn" data-vfx="full" data-i18n="full">TAM</button>
         </div>
       </div>
       <div class="settings-row">
@@ -1702,6 +1835,15 @@ html, body {
           <button class="lang-btn" data-lang="en">EN</button>
         </div>
       </div>
+      <div class="settings-row">
+        <span class="settings-label" data-i18n="backup">YEDEKLE</span>
+        <div class="option-group">
+          <button class="option-btn" id="export-settings" data-i18n="backupExport">DIŞA AKTAR</button>
+          <button class="option-btn" id="import-settings" data-i18n="backupImport">İÇE AKTAR</button>
+          <input type="file" id="import-settings-file" accept="application/json" hidden>
+        </div>
+      </div>
+      <div class="backup-status" id="backup-status"></div>
       <div class="settings-row">
         <span class="settings-label" data-i18n="credits">KREDİLER</span>
         <button class="credits-btn" id="open-credits" data-i18n="view">GÖSTER</button>
@@ -1723,10 +1865,10 @@ html, body {
       <div class="row"><strong data-i18n="fn_cd_t">3-2-1 GERİ SAYIM</strong><span data-i18n="fn_cd">Hazırlık için oyun başında bekleme</span></div>
       <div class="row"><strong data-i18n="fn_low_t">SON 5 SANİYE UYARISI</strong><span data-i18n="fn_low">Sayaç kırmızıya döner, ritmik pulse + tik sesi</span></div>
       <div class="row"><strong data-i18n="fn_streak_t">STREAK BANNER</strong><span data-i18n="fn_streak">Tier-up'ta altın yazı + tier'a özel ses katmanı</span></div>
-      <div class="row"><strong data-i18n="fn_hs_t">HIGH SCORE KUTLAMASI</strong><span data-i18n="fn_hs">Top 5'e girince C major arpejyo + sürdürülen finale</span></div>
+      <div class="row"><strong data-i18n="fn_hs_t">HIGH SCORE KUTLAMASI</strong><span data-i18n="fn_hs">Top 10'a girince C major arpejyo + sürdürülen finale</span></div>
       <div class="row"><strong data-i18n="fn_censor_t">İSİM SANSÜRÜ</strong><span data-i18n="fn_censor">70+ uygunsuz 3 harf engellenir + canlı uyarı</span></div>
       <div class="row"><strong data-i18n="fn_reset_t">LEADERBOARD RESET</strong><span data-i18n="fn_reset">Welcome logosuna 5 tık → onaylı sıfırlama</span></div>
-      <div class="row"><strong data-i18n="fn_top5_t">TOP 5 LEADERBOARD</strong><span data-i18n="fn_top5">Skor tablosu, yerel veya online (JSONBin)</span></div>
+      <div class="row"><strong data-i18n="fn_top5_t">TOP 10 LEADERBOARD</strong><span data-i18n="fn_top5">Skor tablosu, yerel veya online (JSONBin)</span></div>
       <div class="row"><strong data-i18n="fn_themes_t">5 TEMA</strong><span data-i18n="fn_themes">Yeşil elma, üzüm, kiraz, yaban mersini, limon</span></div>
       <div class="row"><strong data-i18n="fn_lang_t">TR / EN DİL</strong><span data-i18n="fn_lang">Tüm metinler anlık tercüme</span></div>
       <div class="row"><strong data-i18n="fn_sound_t">SES KONTROLÜ</strong><span data-i18n="fn_sound">Tüm efektleri tek tıkla kes</span></div>
@@ -1765,8 +1907,6 @@ html, body {
   </div>
 </div>
 
-<div class="version-tag" id="version-tag"></div>
-
 <script>
 (() => {
 'use strict';
@@ -1777,7 +1917,7 @@ const BIN_URL = ''; // Development: no connection to the original leaderboard
 const API_KEY = ''; // Never publish service credentials in client code
 const DEBUG_LABEL = false;  // test için true yap, prodda false
 const _OK = 'Xq3#zT';       // label obfuscation key
-const BUILD = 'v0.1.0';        // her push'ta bump et
+const BUILD = 'v0.2.0';        // her push'ta bump et
 
 const ROUND_DURATION_MS     = 60000;
 const COUNTDOWN_STEP_MS     = 700;
@@ -1810,7 +1950,7 @@ function getVictoryTier(score) {
   return VICTORY_TIERS.find(t => score >= t.threshold) || null;
 }
 const LB_STORAGE_KEY        = 'aiorreal_leaderboard_v1';
-const SETTINGS_STORAGE_KEY  = 'aiorreal_settings_v1';
+const SETTINGS_STORAGE_KEY  = 'aiorreal_settings_v5';
 
 // =========================================================
 // NAME BLOCKLIST (top-5 ekran adı sansürü)
@@ -1842,7 +1982,7 @@ function isBlockedName(s) {
 const I18N = {
   tr: {
     tagline:    'YAPAY ZEKA mı &nbsp;·&nbsp; GERÇEK mi',
-    start:      'BAŞLA',
+    start:      'KLASİK',
     endless:    'SONSUZ MOD',
     top5:       'TOP 10',
     v_notbad:     'FENA DEĞİL!',
@@ -1863,14 +2003,44 @@ const I18N = {
     score:      'SKOR',
     sec:        'sn',
     timeUp:     'SÜRE BİTTİ',
-    enterName:  "TOP 5'E GİRDİN · İSMİNİ GİR",
+    enterName:  "TOP 10'A GİRDİN · İSMİNİ GİR",
     playAgain:  'TEKRAR OYNA',
+    devFinish:  'BİTİR',
+    devExit:    'ÇIKIŞ',
     settings:   'AYARLAR',
-    sound:      'SES',
+    sound:      'GENEL SFX',
+    themeSound: 'TEMA SFX',
+    soundArcade:'ARCADE',
+    soundEvidence:'EVIDENCE',
+    soundSignal:'SIGNAL',
+    soundArchive:'ARCHIVE',
+    soundSpectrum:'SPECTRUM',
+    soundOrbit:'ORBIT',
+    color1:     'RENK 1',
+    color2:     'RENK 2',
+
+    vfx:        'GENEL VFX',
+    auto:       'OTOMATİK',
+    light:      'AÇIK',
+    dark:       'KOYU',
+    soft:       'SADE',
+    full:       'TAM',
     on:         'AÇIK',
     off:        'KAPALI',
     lang:       'DİL',
     theme:      'TEMA',
+    themeLab:   'EVIDENCE',
+    themeArcade:'ARCADE',
+    themeSignal:'SIGNAL',
+    themeArchive:'ARCHIVE',
+    themeSpectrum:'SPECTRUM',
+    themeOrbit: 'ORBIT',
+    backup:       'YEDEKLE',
+    backupExport: 'DIŞA AKTAR',
+    backupImport: 'İÇE AKTAR',
+    backupOk:     'Ayarlar ve skor tablosu indirildi',
+    backupBadFile:'Dosya okunamadı ya da geçersiz',
+    backupDone:   'Yedek geri yüklendi',
     credits:    'KREDİLER',
     view:       'GÖSTER',
     cr_game:    'OYUN',
@@ -1898,11 +2068,11 @@ const I18N = {
     fn_cd_t:    '3-2-1 GERİ SAYIM',       fn_cd:      'Hazırlık için oyun başında bekleme',
     fn_low_t:   'SON 5 SANİYE UYARISI',   fn_low:     'Sayaç kırmızıya döner, ritmik pulse + tik sesi',
     fn_streak_t:'STREAK BANNER',          fn_streak:  "Tier-up'ta altın yazı + tier'a özel ses katmanı",
-    fn_hs_t:    'HIGH SCORE KUTLAMASI',   fn_hs:      "Top 5'e girince C major arpejyo + sürdürülen finale",
+    fn_hs_t:    'HIGH SCORE KUTLAMASI',   fn_hs:      "Top 10'a girince C major arpejyo + sürdürülen finale",
     fn_censor_t:'İSİM SANSÜRÜ',           fn_censor:  '70+ uygunsuz 3 harf engellenir + canlı uyarı',
     fn_reset_t: 'LEADERBOARD RESET',      fn_reset:   'Welcome logosuna 5 tık → onaylı sıfırlama',
-    fn_top5_t:  'TOP 5 LEADERBOARD',      fn_top5:    'Skor tablosu, yerel veya online (JSONBin)',
-    fn_themes_t:'5 TEMA',                 fn_themes:  'Yeşil elma, üzüm, kiraz, yaban mersini, limon',
+    fn_top5_t:  'TOP 10 LEADERBOARD',     fn_top5:    'Skor tablosu, yerel veya online (JSONBin)',
+    fn_themes_t:'6 TEMA',                 fn_themes:  'Evidence, Arcade, Signal, Archive, Spectrum ve Orbit',
     fn_lang_t:  'TR / EN DİL',            fn_lang:    'Tüm metinler anlık tercüme',
     fn_sound_t: 'SES KONTROLÜ',           fn_sound:   'Tüm efektleri tek tıkla kes',
     fn_stats_t: 'END İSTATİSTİKLERİ',     fn_stats:   'Doğru/yanlış, en uzun seri, doğruluk %',
@@ -1923,8 +2093,9 @@ const I18N = {
     tech_pages: 'Statik site barındırma',
   },
   en: {
-    tagline:    'AI &nbsp;·&nbsp; OR REAL',
-    start:      'START',
+    labTitle: 'PERCEPTION LAB', labCode: 'EXPERIMENT / 001',
+    tagline:    'How much do you trust your eyes?',
+    start:      'CLASSIC',
     endless:    'ENDLESS',
     top5:       'TOP 10',
     v_notbad:     'NOT BAD!',
@@ -1945,14 +2116,44 @@ const I18N = {
     score:      'SCORE',
     sec:        's',
     timeUp:     'TIME UP',
-    enterName:  'MADE TOP 5 · ENTER NAME',
+    enterName:  'MADE TOP 10 · ENTER NAME',
     playAgain:  'PLAY AGAIN',
+    devFinish:  'FINISH',
+    devExit:    'EXIT',
     settings:   'SETTINGS',
-    sound:      'SOUND',
+    sound:      'GENERAL SFX',
+    themeSound: 'THEME SFX',
+    soundArcade:'ARCADE',
+    soundEvidence:'EVIDENCE',
+    soundSignal:'SIGNAL',
+    soundArchive:'ARCHIVE',
+    soundSpectrum:'SPECTRUM',
+    soundOrbit:'ORBIT',
+    color1:     'COLOR 1',
+    color2:     'COLOR 2',
+
+    vfx:        'GENERAL VFX',
+    auto:       'AUTO',
+    light:      'LIGHT',
+    dark:       'DARK',
+    soft:       'SOFT',
+    full:       'FULL',
     on:         'ON',
     off:        'OFF',
     lang:       'LANGUAGE',
     theme:      'THEME',
+    themeLab:   'EVIDENCE',
+    themeArcade:'ARCADE',
+    themeSignal:'SIGNAL',
+    themeArchive:'ARCHIVE',
+    themeSpectrum:'SPECTRUM',
+    themeOrbit: 'ORBIT',
+    backup:       'BACKUP',
+    backupExport: 'EXPORT',
+    backupImport: 'IMPORT',
+    backupOk:     'Settings and leaderboard downloaded',
+    backupBadFile:'Could not read the file, or it is invalid',
+    backupDone:   'Backup restored',
     credits:    'CREDITS',
     view:       'VIEW',
     cr_game:    'GAME',
@@ -1980,11 +2181,11 @@ const I18N = {
     fn_cd_t:    '3-2-1 COUNTDOWN',        fn_cd:      'Preparation pause before round starts',
     fn_low_t:   'LAST 5 SECONDS WARNING', fn_low:     'Timer turns red, rhythmic pulse + tick sound',
     fn_streak_t:'STREAK BANNER',          fn_streak:  'Tier-up shows gold text + tier-specific sound layer',
-    fn_hs_t:    'HIGH SCORE FANFARE',     fn_hs:      'C major arpeggio + sustained finale on top 5 entry',
+    fn_hs_t:    'HIGH SCORE FANFARE',     fn_hs:      'C major arpeggio + sustained finale on top 10 entry',
     fn_censor_t:'NAME CENSORSHIP',        fn_censor:  '70+ inappropriate 3-letter codes blocked + live warning',
     fn_reset_t: 'LEADERBOARD RESET',      fn_reset:   '5 taps on welcome logo → confirmed reset',
-    fn_top5_t:  'TOP 5 LEADERBOARD',      fn_top5:    'Score table, local or online (JSONBin)',
-    fn_themes_t:'5 THEMES',               fn_themes:  'Apple, grape, cherry, blueberry, lemon',
+    fn_top5_t:  'TOP 10 LEADERBOARD',     fn_top5:    'Score table, local or online (JSONBin)',
+    fn_themes_t:'6 THEMES',               fn_themes:  'Evidence, Arcade, Signal, Archive, Spectrum, and Orbit',
     fn_lang_t:  'TR / EN',                fn_lang:    'All text translates instantly',
     fn_sound_t: 'SOUND TOGGLE',           fn_sound:   'Mute all effects with one tap',
     fn_stats_t: 'END SCREEN STATS',       fn_stats:   'Correct/wrong, best streak, accuracy %',
@@ -2024,6 +2225,32 @@ function t(key) {
 }
 const FEEDBACK_HOLD_MS      = 380;
 const LOW_TIME_THRESHOLD_S  = 10;
+const RESTART_COOLDOWN_MS    = 3000;
+let restartCooldownTimer     = null;
+let restartUnlockAt          = 0;
+
+function updateRestartCooldown() {
+  const btn = document.getElementById('btn-restart');
+  const remainingMs = Math.max(0, restartUnlockAt - performance.now());
+  if (remainingMs <= 0) {
+    if (restartCooldownTimer) clearInterval(restartCooldownTimer);
+    restartCooldownTimer = null;
+    btn.disabled = false;
+    btn.removeAttribute('aria-disabled');
+    btn.textContent = t('playAgain');
+    return;
+  }
+  btn.disabled = true;
+  btn.setAttribute('aria-disabled', 'true');
+  btn.textContent = `${t('playAgain')} · ${Math.ceil(remainingMs / 1000)}`;
+}
+
+function startRestartCooldown() {
+  if (restartCooldownTimer) clearInterval(restartCooldownTimer);
+  restartUnlockAt = performance.now() + RESTART_COOLDOWN_MS;
+  updateRestartCooldown();
+  restartCooldownTimer = setInterval(updateRestartCooldown, 100);
+}
 
 // fallback — nötr seed isimleri (URL'den label sızmasın)
 const FALLBACK_IMAGES = [
@@ -2057,13 +2284,21 @@ const state = {
   leaderboard:   [],
   lang:          'tr',
   soundEnabled:  true,
-  theme:         'apple',
+  soundTheme:    'arcade',
+  soundVolume:   5,
+  theme:         'lab',
+  color1:        'paper',
+  color2:        'coral',
+  vfx:           'full',
   perfectionAchieved: false,
   mode:          'classic',  // 'classic' | 'endless'
   lives:         ENDLESS_LIVES,
+  devMode:       false,
+  gameRunId:     0,
 };
 
-const VALID_THEMES = ['apple', 'grape', 'cherry', 'blueberry', 'lemon'];
+const VALID_THEMES = ['lab', 'arcade', 'signal', 'archive', 'spectrum', 'orbit'];
+const PALETTE_KEYS = ['paper','ink','cobalt','butter','coral','violet','cyan','rose','sand','neon'];
 
 // =========================================================
 // SETTINGS PERSISTENCE
@@ -2073,7 +2308,12 @@ function loadSettings() {
     const s = JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY) || '{}');
     if (s.lang === 'tr' || s.lang === 'en') state.lang = s.lang;
     if (typeof s.soundEnabled === 'boolean') state.soundEnabled = s.soundEnabled;
+    if (['arcade', 'evidence', 'signal', 'archive', 'spectrum', 'orbit'].includes(s.soundTheme)) state.soundTheme = s.soundTheme;
+    if (Number.isInteger(s.soundVolume) && s.soundVolume >= 1 && s.soundVolume <= 5) state.soundVolume = s.soundVolume;
     if (VALID_THEMES.includes(s.theme)) state.theme = s.theme;
+    if (PALETTE_KEYS.includes(s.color1)) state.color1 = s.color1;
+    if (PALETTE_KEYS.includes(s.color2)) state.color2 = s.color2;
+    if (['off', 'soft', 'full'].includes(s.vfx)) state.vfx = s.vfx;
   } catch (e) {}
 }
 
@@ -2082,17 +2322,47 @@ function saveSettings() {
     localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({
       lang: state.lang,
       soundEnabled: state.soundEnabled,
+      soundTheme: state.soundTheme,
+      soundVolume: state.soundVolume,
       theme: state.theme,
+      color1: state.color1,
+      color2: state.color2,
+      vfx: state.vfx,
     }));
   } catch (e) {}
 }
 
 function applyTheme() {
-  VALID_THEMES.forEach(t => document.body.classList.remove('theme-' + t));
-  document.body.classList.add('theme-' + state.theme);
+  document.body.classList.remove('theme-apple', 'theme-grape', 'theme-cherry', 'theme-blueberry', 'theme-lemon');
+  document.body.classList.remove('signal-theme', 'archive-theme', 'spectrum-theme', 'orbit-theme');
+  document.body.classList.toggle('lab-theme', state.theme === 'lab');
+  if (state.theme === 'arcade') document.body.classList.add('theme-apple');
+  if (state.theme !== 'lab' && state.theme !== 'arcade') document.body.classList.add(state.theme + '-theme');
+  const tagline = document.querySelector('.tagline');
+  if (tagline) {
+    tagline.textContent = BUILD;
+  }
   document.querySelectorAll('.theme-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.theme === state.theme);
   });
+  document.body.classList.remove(...PALETTE_KEYS.map(x => 'bg-' + x), ...PALETTE_KEYS.map(x => 'accent-' + x), 'text-paper', 'text-ink', 'vfx-off', 'vfx-soft', 'vfx-full');
+  document.body.classList.add('bg-' + state.color1, 'accent-' + state.color2, readableTextClass(state.color1));
+  document.body.classList.add('vfx-' + state.vfx);
+  document.querySelectorAll('.color1-btn').forEach(b => b.classList.toggle('active', b.dataset.color1 === state.color1));
+  document.querySelectorAll('.color2-btn').forEach(b => b.classList.toggle('active', b.dataset.color2 === state.color2));
+  document.querySelectorAll('.vfx-btn').forEach(b => b.classList.toggle('active', b.dataset.vfx === state.vfx));
+}
+
+const PALETTE_HEX = {paper:'#f0f0e9',ink:'#0a0a0f',cobalt:'#2647d7',butter:'#f1df57',coral:'#e65a42',violet:'#7c4dce',cyan:'#16b8c4',forest:'#1f6b4f',rose:'#d93f83',sand:'#c7a873',neon:'#00ff88'};
+function readableTextClass(color) {
+  const rgb=PALETTE_HEX[color].slice(1).match(/.{2}/g).map(x=>parseInt(x,16)/255).map(x=>x<=.04045?x/12.92:Math.pow((x+.055)/1.055,2.4));
+  const luminance=.2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2];
+  return luminance > .38 ? 'text-ink' : 'text-paper';
+}
+function protectPalette(changed) {
+  if (state.color1 !== state.color2) return;
+  if (changed === 'color1') state.color2 = readableTextClass(state.color1) === 'text-ink' ? 'ink' : 'paper';
+  if (changed === 'color2') state.color1 = readableTextClass(state.color2) === 'text-ink' ? 'ink' : 'paper';
 }
 
 // =========================================================
@@ -2106,9 +2376,84 @@ const sfx = (() => {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return null;
       ctx = new AC();
+      // master bus: tüm sesler buradan geçer — kombo katmanları üst üste binince
+      // sert dijital clipping yerine yumuşak sıkıştırma (perceived loudness/punch) uygular
+      const master = ctx.createGain();
+      master.gain.value = 1;
+      const comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -10;
+      comp.knee.value = 14;
+      comp.ratio.value = 5;
+      comp.attack.value = 0.003;
+      comp.release.value = 0.16;
+      master.connect(comp).connect(ctx.destination);
+      ctx._master = master;
     }
     if (ctx.state === 'suspended') ctx.resume();
     return ctx;
+  }
+  const soundProfiles = {
+    evidence:{ body:'sine',     edge:'sine',     ratio:2,    edgeGain:.07, cutoff:4200, q:.4, decay:.58, drive:0,   echo:0 },
+    signal:  { body:'square',   edge:'sawtooth', ratio:.5,   edgeGain:.16, cutoff:1900, q:5,  decay:.82, drive:1.5, echo:0 },
+    archive: { body:'triangle', edge:'square',   ratio:.5,   edgeGain:.24, cutoff:850,  q:.8, decay:.42, drive:2.3, echo:0 },
+    spectrum:{ body:'triangle', edge:'sine',     ratio:1.25, edgeGain:.34, cutoff:5400, q:.7, decay:1.08,drive:0,   echo:0 },
+    orbit:   { body:'sine',     edge:'sine',     ratio:2,    edgeGain:.11, cutoff:3600, q:2,  decay:1.35,drive:0,   echo:.17 },
+  };
+  function themeVoice(f1, f2, dur, vol, soundTheme = state.soundTheme) {
+    const profile = soundProfiles[soundTheme];
+    if (!profile) return false;
+    const c = ensure(); if (!c) return true;
+    const t0 = c.currentTime;
+    const voiceDur = Math.max(.055, dur * profile.decay);
+    const startFreq = Math.max(45, Math.min(4200, f1));
+    const endFreq = Math.max(45, Math.min(4200, f2));
+    const body = c.createOscillator();
+    const edge = c.createOscillator();
+    const edgeGain = c.createGain();
+    const filter = c.createBiquadFilter();
+    const gain = c.createGain();
+    body.type = profile.body;
+    edge.type = profile.edge;
+    body.frequency.setValueAtTime(startFreq, t0);
+    edge.frequency.setValueAtTime(Math.max(45, startFreq * profile.ratio), t0);
+    if (startFreq !== endFreq) {
+      body.frequency.exponentialRampToValueAtTime(endFreq, t0 + voiceDur);
+      edge.frequency.exponentialRampToValueAtTime(Math.max(45, endFreq * profile.ratio), t0 + voiceDur);
+    }
+    edgeGain.gain.value = profile.edgeGain;
+    filter.type = soundTheme === 'signal' ? 'bandpass' : 'lowpass';
+    filter.Q.value = profile.q;
+    filter.frequency.setValueAtTime(Math.min(6000, Math.max(260, profile.cutoff)), t0);
+    if (soundTheme === 'archive') filter.frequency.exponentialRampToValueAtTime(320, t0 + voiceDur);
+    gain.gain.setValueAtTime(.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(Math.max(.0002, vol * .92 * (state.soundVolume / 5)), t0 + .004);
+    gain.gain.exponentialRampToValueAtTime(.0001, t0 + voiceDur);
+    body.connect(filter);
+    edge.connect(edgeGain).connect(filter);
+    let output = filter;
+    if (profile.drive) {
+      const shaper = c.createWaveShaper();
+      const curve = new Float32Array(128);
+      for (let i = 0; i < curve.length; i++) {
+        const x = i * 2 / (curve.length - 1) - 1;
+        curve[i] = Math.tanh(profile.drive * x);
+      }
+      shaper.curve = curve;
+      shaper.oversample = '2x';
+      filter.connect(shaper);
+      output = shaper;
+    }
+    output.connect(gain).connect(c._master);
+    if (profile.echo) {
+      const delay = c.createDelay(.5);
+      const echoGain = c.createGain();
+      delay.delayTime.value = profile.echo;
+      echoGain.gain.value = .2;
+      gain.connect(delay).connect(echoGain).connect(c._master);
+    }
+    body.start(t0); edge.start(t0);
+    body.stop(t0 + voiceDur + .03); edge.stop(t0 + voiceDur + .03);
+    return true;
   }
   function tone(freq, dur, type, vol) {
     const c = ensure(); if (!c) return;
@@ -2118,9 +2463,9 @@ const sfx = (() => {
     osc.type = type || 'sine';
     osc.frequency.setValueAtTime(freq, t0);
     g.gain.setValueAtTime(0, t0);
-    g.gain.linearRampToValueAtTime(vol, t0 + 0.005);
+    g.gain.linearRampToValueAtTime(vol * (state.soundVolume / 5), t0 + 0.005);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    osc.connect(g).connect(c.destination);
+    osc.connect(g).connect(c._master);
     osc.start(t0);
     osc.stop(t0 + dur + 0.02);
   }
@@ -2134,9 +2479,9 @@ const sfx = (() => {
     const g = c.createGain();
     const t0 = c.currentTime;
     g.gain.setValueAtTime(0, t0);
-    g.gain.linearRampToValueAtTime(vol, t0 + 0.005);
+    g.gain.linearRampToValueAtTime(vol * (state.soundVolume / 5), t0 + 0.005);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    src.connect(g).connect(c.destination);
+    src.connect(g).connect(c._master);
     src.start(t0);
     src.stop(t0 + dur + 0.02);
   }
@@ -2149,13 +2494,175 @@ const sfx = (() => {
     osc.frequency.setValueAtTime(f1, t0);
     osc.frequency.exponentialRampToValueAtTime(Math.max(40, f2), t0 + dur);
     g.gain.setValueAtTime(0, t0);
-    g.gain.linearRampToValueAtTime(vol, t0 + 0.01);
+    g.gain.linearRampToValueAtTime(vol * (state.soundVolume / 5), t0 + 0.01);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    osc.connect(g).connect(c.destination);
+    osc.connect(g).connect(c._master);
     osc.start(t0);
     osc.stop(t0 + dur + 0.02);
   }
-  return {
+  const comboStrength = {
+    streakSmall:1, streakMid:2, streakBig:3, streakHuge:4, streakInsane:5,
+    streakLegendary:6, streakUltimate:7, streakGodlike:8, streakMythic:9,
+    streakInfinite:10, streakTranscendent:11, streakOmega:12,
+    streakBeyond:13, streakInfinityPlus:14, highScore:6, jackpot:15,
+  };
+  function playThemeEvent(name) {
+    const pack = state.soundTheme;
+    if (pack === 'arcade' || !soundProfiles[pack]) return false;
+    if (name === 'prime') { ensure(); return true; }
+    const voice = (f1, f2, dur, vol, delay = 0) => {
+      const play = () => themeVoice(f1, f2, dur, vol, pack);
+      if (delay > 0) setTimeout(play, delay); else play();
+    };
+    const level = comboStrength[name] || 0;
+    const power = Math.min(1, level / 15);
+    const hit = (f1, f2, dur, vol, delay = 0) => voice(f1, f2, dur * (1 + power * .45), Math.min(.46, vol * (1 + power * 1.7)), delay);
+    // arcade'deki katmanlı sub-bas hissini tema paketlerine taşır: ham osilatör (tema filtresinden
+    // bağımsız), seviye arttıkça alt oktavlarla kalınlaşır — kombo başında ve final vuruşunda çağrılır
+    const bassBase = { evidence: 92, signal: 62, archive: 50, spectrum: 76, orbit: 52 }[pack] || 65;
+    const bass = (delay = 0) => {
+      if (!level) return;
+      const play = () => {
+        tone(bassBase, .55 + power * .85, 'sine', .16 + power * .18);
+        if (level >= 5)  tone(bassBase * .55, .70 + power * 1.00, 'sine', .13 + power * .16);
+        if (level >= 10) tone(bassBase * .30, .85 + power * 1.20, 'sine', .11 + power * .15);
+      };
+      if (delay > 0) setTimeout(play, delay); else play();
+    };
+
+    if (pack === 'evidence') {
+      if (name === 'click') voice(1550, 1380, .045, .08);
+      else if (name === 'correct') { voice(740, 740, .09, .16); voice(1110, 1110, .08, .13, 82); }
+      else if (name === 'wrong') { voice(440, 220, .18, .18); voice(330, 165, .16, .13, 80); }
+      else if (name === 'tick') voice(1320, 1320, .035, .09);
+      else if (name === 'countdown') voice(880, 880, .06, .12);
+      else if (name === 'go') { voice(660, 660, .07, .14); voice(1320, 1320, .13, .18, 95); }
+      else if (name === 'end') { voice(440, 440, .10, .14); voice(220, 220, .22, .16, 115); }
+      else if (level) {
+        bass(0);
+        const count = Math.min(16, 2 + level);
+        const spacing = Math.max(38, 74 - level * 2);
+        for (let i = 0; i < count; i++) {
+          hit(i % 2 ? 1320 : 880, i % 2 ? 1320 : 880, .055, .11, i * spacing);
+          if (level >= 5 && i % 3 === 0) hit(220, 220, .10, .08, i * spacing);
+        }
+        const finale = count * spacing + 25;
+        bass(finale);
+        hit(1760, 1760, .20, .19, finale);
+        hit(880, 880, .18, .14, finale + 15);
+        if (level >= 9) { hit(880, 880, .28, .16, finale); hit(3520, 3520, .22, .13, finale + 35); hit(440, 440, .30, .15, finale + 10); }
+      }
+      return true;
+    }
+
+    if (pack === 'signal') {
+      if (name === 'click') voice(980, 620, .055, .08);
+      else if (name === 'correct') [620,930,1240].forEach((f,i)=>voice(f,f*1.08,.055,.13,i*46));
+      else if (name === 'wrong') { voice(720, 180, .22, .20); voice(980, 240, .10, .12, 55); voice(180, 90, .18, .12, 125); }
+      else if (name === 'tick') voice(1500, 1050, .035, .08);
+      else if (name === 'countdown') { voice(460, 690, .055, .12); voice(920, 720, .045, .08, 62); }
+      else if (name === 'go') [330,660,1320].forEach((f,i)=>voice(f,f*1.18,.07,.14,i*42));
+      else if (name === 'end') { voice(520, 130, .30, .17); voice(90, 60, .20, .12, 120); }
+      else if (level) {
+        bass(0);
+        const count = Math.min(18, 3 + level);
+        const spacing = Math.max(27, 46 - level);
+        for (let i=0;i<count;i++) {
+          hit(i%3===0?220:880+i*34,i%3===0?110:1040+i*42,.06,.13,i*spacing+(i%2?14:0));
+          if (level >= 4 && i % 4 === 0) hit(72, 54, .16, .11, i * spacing);
+        }
+        const finale=count*spacing+35;
+        bass(finale);
+        hit(440,1760,.30,.21,finale);
+        hit(660,1320,.26,.16,finale+18);
+        if(level>=8){hit(110,55,.44,.18,finale);hit(1320,2640,.34,.16,finale+45);}
+      }
+      return true;
+    }
+
+    if (pack === 'archive') {
+      if (name === 'click') { voice(118, 92, .06, .12); voice(720, 540, .025, .05, 18); }
+      else if (name === 'correct') [180,240,180].forEach((f,i)=>voice(f,f*.86,.075,.14,i*78));
+      else if (name === 'wrong') { voice(360, 140, .22, .20); voice(720, 420, .05, .09, 25); voice(180, 90, .30, .16, 110); }
+      else if (name === 'tick') voice(104, 88, .045, .10);
+      else if (name === 'countdown') voice(146, 110, .09, .13);
+      else if (name === 'go') { voice(98, 82, .08, .15); voice(196, 165, .16, .17, 120); }
+      else if (name === 'end') [147,110,82].forEach((f,i)=>voice(f,f*.72,.15,.16,i*130));
+      else if (level) {
+        bass(0);
+        const rhythm=[82,123,98,165,110,196];
+        const count=Math.min(16,3+level);
+        const spacing=Math.max(55,100-level*3);
+        for(let i=0;i<count;i++) {
+          hit(rhythm[i%rhythm.length],rhythm[i%rhythm.length]*.82,.08,.14,i*spacing);
+          if(level>=5&&i%3===1) hit(640,420,.035,.07,i*spacing+22);
+        }
+        const finale=count*spacing+30;
+        bass(finale);
+        hit(73,55,.40,.22,finale);
+        hit(146,110,.34,.17,finale+20);
+        if(level>=9){hit(146,82,.50,.19,finale);hit(49,45,.60,.17,finale+65);}
+      }
+      return true;
+    }
+
+    if (pack === 'spectrum') {
+      if (name === 'click') { voice(660,660,.07,.08); voice(825,825,.07,.07); }
+      else if (name === 'correct') [523,659,784].forEach((f,i)=>voice(f,f,.18,.12,i*32));
+      else if (name === 'wrong') { voice(370,220,.24,.16); voice(415,196,.24,.14,25); voice(740,330,.12,.09,80); }
+      else if (name === 'tick') { voice(988,988,.04,.07); voice(1245,1245,.04,.05); }
+      else if (name === 'countdown') [392,494].forEach(f=>voice(f,f,.10,.10));
+      else if (name === 'go') [523,659,784,1047].forEach((f,i)=>voice(f,f,.25,.12,i*28));
+      else if (name === 'end') [659,554,440,330].forEach((f,i)=>voice(f,f,.16,.12,i*85));
+      else if (level) {
+        bass(0);
+        const roots=[261,329,392,494];
+        const count=Math.min(12,2+Math.ceil(level*.68));
+        const spacing=Math.max(46,80-level*2);
+        for(let i=0;i<count;i++) {
+          const root=roots[i%roots.length]*Math.pow(2,Math.floor(i/4));
+          hit(root,root,.20,.11,i*spacing); hit(root*1.25,root*1.25,.18,.08,i*spacing+14); hit(root*1.5,root*1.5,.18,.07,i*spacing+28);
+          if(level>=7) hit(root*2,root*2,.16,.06,i*spacing+38);
+        }
+        const finale=count*spacing+40;
+        bass(finale);
+        if(level>=5){[523,659,784].forEach((f,i)=>hit(f,f,.30,.14,finale+i*16));}
+        if(level>=10){[523,659,784,1047,1318].forEach((f,i)=>hit(f,f,.46,.13,finale+i*18));}
+      }
+      return true;
+    }
+
+    if (pack === 'orbit') {
+      if (name === 'click') voice(1180,1180,.12,.08);
+      else if (name === 'correct') { voice(440,660,.30,.13); voice(880,880,.32,.10,145); }
+      else if (name === 'wrong') { voice(620,180,.42,.23); voice(310,110,.36,.17,110); voice(1240,420,.18,.10,35); }
+      else if (name === 'tick') voice(1320,1320,.075,.07);
+      else if (name === 'countdown') voice(330,330,.24,.11);
+      else if (name === 'go') { voice(220,440,.32,.14); voice(880,1320,.38,.12,190); }
+      else if (name === 'end') { voice(440,110,.55,.15); voice(82,55,.52,.11,210); }
+      else if (level) {
+        bass(0);
+        const orbitNotes=[220,330,440,660,880];
+        const count=Math.min(11,2+Math.ceil(level*.62));
+        const spacing=Math.max(82,148-level*4);
+        hit(55,55,.8,.10);
+        if(level>=5) hit(110,82,1.0,.10,35);
+        if(level>=10) hit(45,66,1.25,.13,65);
+        for(let i=0;i<count;i++) {
+          hit(orbitNotes[i%orbitNotes.length],orbitNotes[i%orbitNotes.length]*1.5,.30,.13,i*spacing);
+          if(level>=7&&i%2===0) hit(orbitNotes[i%orbitNotes.length]*2,orbitNotes[i%orbitNotes.length]*2,.24,.08,i*spacing+42);
+        }
+        const finale=count*spacing+80;
+        bass(finale);
+        hit(880,1760,.58,.18,finale);
+        hit(440,880,.5,.15,finale+25);
+        if(level>=9){hit(440,1320,.72,.16,finale+70);hit(1760,2640,.64,.13,finale+135);}
+      }
+      return true;
+    }
+    return false;
+  }
+  const arcadeSounds = {
     prime()    { ensure(); },
     click()    { tone(720, 0.05, 'square', 0.07); },
     correct()  { sweep(520, 920, 0.16, 'triangle', 0.18); },
@@ -2424,6 +2931,13 @@ const sfx = (() => {
       }, 2700);
     },
   };
+  return new Proxy(arcadeSounds, {
+    get(target, prop) {
+      const original = target[prop];
+      if (typeof original !== 'function') return original;
+      return (...args) => playThemeEvent(String(prop)) || original(...args);
+    },
+  });
 })();
 
 // =========================================================
@@ -2589,6 +3103,7 @@ function updateStageTier() {
 // GAME LOOP
 // =========================================================
 async function startGame(mode) {
+  const runId = ++state.gameRunId;
   state.mode = mode === 'endless' ? 'endless' : 'classic';
   state.lives = ENDLESS_LIVES;
   document.getElementById('game').classList.toggle('mode-endless', state.mode === 'endless');
@@ -2639,7 +3154,8 @@ async function startGame(mode) {
 
   showScreen('game');
 
-  await runCountdown();
+  const countdownFinished = await runCountdown(runId);
+  if (!countdownFinished || runId !== state.gameRunId || state.screen !== 'game') return;
 
   // ilk soruyu göster
   imgEl.src = firstImg.src;
@@ -2655,19 +3171,23 @@ async function startGame(mode) {
   }
 }
 
-async function runCountdown() {
+async function runCountdown(runId) {
   const cd = document.getElementById('countdown');
   cd.classList.add('shown');
   for (const step of ['3', '2', '1']) {
+    if (runId !== state.gameRunId) { cd.classList.remove('shown'); cd.innerHTML = ''; return false; }
     cd.innerHTML = '<div class="num">' + step + '</div>';
     sfx.countdown();
     await sleep(COUNTDOWN_STEP_MS);
   }
+  if (runId !== state.gameRunId) { cd.classList.remove('shown'); cd.innerHTML = ''; return false; }
   cd.innerHTML = '<div class="go">GO</div>';
   sfx.go();
   await sleep(COUNTDOWN_STEP_MS);
+  if (runId !== state.gameRunId) { cd.classList.remove('shown'); cd.innerHTML = ''; return false; }
   cd.classList.remove('shown');
   cd.innerHTML = '';
+  return true;
 }
 
 function tick(now) {
@@ -2848,6 +3368,7 @@ function flashFeedback(correct, delta, popClass, showPop) {
 }
 
 function endGame() {
+  state.gameRunId++;
   if (state.rafId) cancelAnimationFrame(state.rafId);
   state.rafId = null;
   if (state.pendingNextId) clearTimeout(state.pendingNextId);
@@ -2900,7 +3421,23 @@ function endGame() {
   } else {
     nameRow.classList.remove('shown');
   }
+  startRestartCooldown();
   showScreen('end');
+}
+
+function exitGameToWelcome() {
+  state.gameRunId++;
+  if (state.rafId) cancelAnimationFrame(state.rafId);
+  state.rafId = null;
+  if (state.pendingNextId) clearTimeout(state.pendingNextId);
+  state.pendingNextId = null;
+  state.busy = false;
+  const countdown = document.getElementById('countdown');
+  countdown.classList.remove('shown');
+  countdown.innerHTML = '';
+  setChoicesDisabled(false);
+  renderLeaderboard();
+  showScreen('welcome');
 }
 
 // =========================================================
@@ -3050,21 +3587,24 @@ async function resetLeaderboard() {
 // =========================================================
 document.getElementById('btn-start').addEventListener('click', () => startGame('classic'));
 document.getElementById('btn-endless').addEventListener('click', () => startGame('endless'));
+document.getElementById('dev-finish').addEventListener('click', () => {
+  if (!state.devMode || state.screen !== 'game' || state.mode !== 'classic') return;
+  state.timeLeftMs = 0;
+  updateTimer();
+  endGame();
+});
+document.getElementById('dev-exit').addEventListener('click', () => {
+  if (!state.devMode || state.screen !== 'game' || state.mode !== 'classic') return;
+  exitGameToWelcome();
+});
 
-// mobil scoreboard slide toggle
-(function () {
-  const welcome = document.getElementById('welcome');
-  const showBtn = document.getElementById('show-board-btn');
-  const backBtn = document.getElementById('back-from-board');
-  if (showBtn) showBtn.addEventListener('click', () => { sfx.click(); welcome.classList.add('board-shown'); });
-  if (backBtn) backBtn.addEventListener('click', () => { sfx.click(); welcome.classList.remove('board-shown'); });
-})();
 
 document.querySelectorAll('.btn-choice').forEach(btn => {
   btn.addEventListener('click', () => handleChoice(btn.dataset.choice));
 });
 
-document.getElementById('btn-restart').addEventListener('click', async () => {
+document.getElementById('btn-restart').addEventListener('click', async (event) => {
+  if (event.currentTarget.disabled) return;
   sfx.click();
   const ok = await submitScoreIfNeeded();
   if (!ok) return;  // blocked name, kal end ekranında
@@ -3151,12 +3691,44 @@ document.addEventListener('visibilitychange', () => {
 // =========================================================
 // SETTINGS UI
 // =========================================================
+function applyDevMode() {
+  document.body.classList.toggle('dev-mode', state.devMode);
+  const btn = document.getElementById('modal-back');
+  btn.classList.toggle('active', state.devMode && btn.dataset.action === 'toggle-dev');
+}
+
+function setModalNav(action) {
+  const btn = document.getElementById('modal-back');
+  btn.dataset.action = action;
+  btn.classList.add('shown');
+  btn.classList.toggle('dev-trigger', action === 'toggle-dev');
+  btn.textContent = action === 'toggle-dev' ? '🐞' : '←';
+  btn.setAttribute('aria-label', action === 'toggle-dev' ? 'Geliştirici modu' : 'Geri');
+  applyDevMode();
+}
+
 function updateSoundToggle() {
   const btn = document.getElementById('toggle-sound');
   const labelSpan = btn.querySelector('span');
   btn.classList.toggle('on', state.soundEnabled);
+  btn.setAttribute('aria-checked', String(state.soundEnabled));
   labelSpan.textContent = state.soundEnabled ? t('on') : t('off');
   labelSpan.setAttribute('data-i18n', state.soundEnabled ? 'on' : 'off');
+  const meter = document.getElementById('volume-meter');
+  meter.classList.toggle('muted', !state.soundEnabled);
+  meter.querySelectorAll('.volume-bar').forEach(bar => {
+    const active = Number(bar.dataset.volume) <= state.soundVolume;
+    bar.classList.toggle('active', active);
+    bar.setAttribute('aria-pressed', String(Number(bar.dataset.volume) === state.soundVolume));
+  });
+}
+
+function updateSoundThemeButtons() {
+  document.querySelectorAll('.sound-theme-btn').forEach(btn => {
+    const active = btn.dataset.soundTheme === state.soundTheme;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', String(active));
+  });
 }
 
 function _resetModalPanes() {
@@ -3170,10 +3742,11 @@ function openSettings() {
   document.getElementById('settings-modal').classList.add('shown');
   _resetModalPanes();
   document.getElementById('settings-content').classList.remove('hidden');
-  document.getElementById('modal-back').classList.remove('shown');
+  setModalNav('toggle-dev');
   document.getElementById('modal-title').setAttribute('data-i18n', 'settings');
   applyLang();
   updateSoundToggle();
+  updateSoundThemeButtons();
 }
 
 function closeSettings() {
@@ -3183,7 +3756,7 @@ function closeSettings() {
 function showCredits() {
   _resetModalPanes();
   document.getElementById('credits-content').classList.add('shown');
-  document.getElementById('modal-back').classList.remove('shown');
+  setModalNav('settings');
   document.getElementById('modal-title').setAttribute('data-i18n', 'credits');
   applyLang();
 }
@@ -3191,7 +3764,7 @@ function showCredits() {
 function showTech() {
   _resetModalPanes();
   document.getElementById('tech-content').classList.add('shown');
-  document.getElementById('modal-back').classList.add('shown');
+  setModalNav('credits');
   document.getElementById('modal-title').setAttribute('data-i18n', 'tech');
   applyLang();
 }
@@ -3199,7 +3772,7 @@ function showTech() {
 function showFunctions() {
   _resetModalPanes();
   document.getElementById('fn-content').classList.add('shown');
-  document.getElementById('modal-back').classList.add('shown');
+  setModalNav('credits');
   document.getElementById('modal-title').setAttribute('data-i18n', 'functions');
   applyLang();
 }
@@ -3215,42 +3788,172 @@ document.getElementById('toggle-sound').addEventListener('click', () => {
   updateSoundToggle();
   if (state.soundEnabled) sfx.click();
 });
+document.querySelectorAll('.sound-theme-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    state.soundTheme = btn.dataset.soundTheme;
+    saveSettings();
+    updateSoundThemeButtons();
+    if (state.soundEnabled) sfx.streakSmall();
+  });
+});
 document.querySelectorAll('.lang-btn').forEach(b => {
   b.addEventListener('click', () => {
     sfx.click();
     state.lang = b.dataset.lang;
     saveSettings();
     applyLang();
+    applyTheme();
     updateSoundToggle();  // re-apply sound label
+    updateSoundThemeButtons();
   });
 });
 document.querySelectorAll('.theme-btn').forEach(b => {
   b.addEventListener('click', () => {
     state.theme = b.dataset.theme;
+    state.soundTheme = state.theme === 'lab' ? 'evidence' : state.theme;
+    if (state.theme === 'lab') {
+      state.color1 = 'paper';
+      state.color2 = 'coral';
+    } else if (state.theme === 'arcade') {
+      state.color1 = 'ink';
+      state.color2 = 'neon';
+    } else if (state.theme === 'signal') {
+      state.color1 = 'cobalt';
+      state.color2 = 'butter';
+    } else if (state.theme === 'archive') {
+      state.color1 = 'sand';
+      state.color2 = 'ink';
+    } else if (state.theme === 'spectrum') {
+      state.color1 = 'coral';
+      state.color2 = 'butter';
+    } else if (state.theme === 'orbit') {
+      state.color1 = 'ink';
+      state.color2 = 'cyan';
+    }
     saveSettings();
     applyTheme();
+    updateSoundThemeButtons();
     sfx.click();
   });
+});
+document.querySelectorAll('.volume-bar').forEach(bar => {
+  bar.addEventListener('click', () => {
+    state.soundVolume = Number(bar.dataset.volume);
+    if (!state.soundEnabled) state.soundEnabled = true;
+    saveSettings();
+    updateSoundToggle();
+    sfx.click();
+  });
+});
+document.querySelectorAll('.color1-btn').forEach(b => {
+  b.addEventListener('click', () => { state.color1 = b.dataset.color1; protectPalette('color1'); saveSettings(); applyTheme(); sfx.click(); });
+});
+document.querySelectorAll('.color2-btn').forEach(b => {
+  b.addEventListener('click', () => { state.color2 = b.dataset.color2; protectPalette('color2'); saveSettings(); applyTheme(); sfx.click(); });
+});
+document.querySelectorAll('.vfx-btn').forEach(b => {
+  b.addEventListener('click', () => { state.vfx = b.dataset.vfx; saveSettings(); applyTheme(); sfx.click(); });
+});
+function showBackupStatus(key, isError) {
+  const el = document.getElementById('backup-status');
+  el.setAttribute('data-i18n', key);
+  el.textContent = t(key);
+  el.classList.toggle('error', !!isError);
+  el.classList.add('shown');
+  clearTimeout(showBackupStatus._t);
+  showBackupStatus._t = setTimeout(() => el.classList.remove('shown'), 3500);
+}
+document.getElementById('export-settings').addEventListener('click', () => {
+  sfx.click();
+  try {
+    const payload = {
+      app: 'ai-or-real',
+      build: BUILD,
+      exportedAt: new Date().toISOString(),
+      settings: JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY) || '{}'),
+      leaderboard: JSON.parse(localStorage.getItem(LB_STORAGE_KEY) || '[]'),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = payload.exportedAt.slice(0, 10);
+    a.href = url;
+    a.download = `ai-or-real-yedek-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showBackupStatus('backupOk', false);
+  } catch (e) {
+    showBackupStatus('backupBadFile', true);
+  }
+});
+document.getElementById('import-settings').addEventListener('click', () => {
+  sfx.click();
+  document.getElementById('import-settings-file').click();
+});
+document.getElementById('import-settings-file').addEventListener('change', async (event) => {
+  const file = event.target.files && event.target.files[0];
+  event.target.value = '';
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    if (!data || typeof data !== 'object') throw new Error('invalid');
+    if (data.settings && typeof data.settings === 'object') {
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(data.settings));
+    }
+    if (Array.isArray(data.leaderboard)) {
+      localStorage.setItem(LB_STORAGE_KEY, JSON.stringify(data.leaderboard));
+    }
+    loadSettings();
+    applyLang();
+    applyTheme();
+    applyDevMode();
+    updateSoundToggle();
+    updateSoundThemeButtons();
+    await loadLeaderboard();
+    renderLeaderboard();
+    sfx.click();
+    showBackupStatus('backupDone', false);
+  } catch (e) {
+    showBackupStatus('backupBadFile', true);
+  }
 });
 document.getElementById('open-credits').addEventListener('click', () => { sfx.click(); showCredits(); });
 document.getElementById('open-tech').addEventListener('click', () => { sfx.click(); showTech(); });
 document.getElementById('open-fn').addEventListener('click', () => { sfx.click(); showFunctions(); });
-document.getElementById('modal-back').addEventListener('click', () => { sfx.click(); showCredits(); });
+document.getElementById('modal-back').addEventListener('click', (event) => {
+  sfx.click();
+  const action = event.currentTarget.dataset.action;
+  if (action === 'toggle-dev') {
+    state.devMode = !state.devMode;
+    applyDevMode();
+  } else if (action === 'settings') {
+    openSettings();
+  } else {
+    showCredits();
+  }
+});
 
 // =========================================================
 // INIT + SW
 // =========================================================
-if ('serviceWorker' in navigator) {
+const IS_LOCAL_DEV = location.hostname === '127.0.0.1' || location.hostname === 'localhost';
+if ('serviceWorker' in navigator && !IS_LOCAL_DEV) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').catch(err => console.warn('SW register fail:', err));
   });
+} else if ('serviceWorker' in navigator && IS_LOCAL_DEV) {
+  navigator.serviceWorker.getRegistrations().then(registrations => registrations.forEach(r => r.unregister()));
+  if ('caches' in window) caches.keys().then(keys => keys.forEach(key => caches.delete(key)));
 }
 
 (async function init() {
   loadSettings();
-  applyTheme();
   applyLang();
-  document.getElementById('version-tag').textContent = BUILD;
+  applyTheme();
+  applyDevMode();
   await loadLeaderboard();
   renderLeaderboard();
   // arka planda görselleri çek — etkinlikte offline da çalışsın

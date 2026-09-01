@@ -9,7 +9,7 @@ Kullanım:
 
 Script:
   - jpegtran ile EXIF strip eder
-  - sıradaki numarayı bulup nötr isim verir (47.jpg, 48.jpg, ...)
+  - sıradaki numarayı bulup nötr isim verir (047.jpg, 048.jpg, ...)
   - images.json'a obfuscated label ile entry ekler
   - incoming klasöründen siler (taşındı sayılır)
 """
@@ -69,7 +69,7 @@ def main():
         files = sorted(p for p in sub.iterdir()
                        if p.is_file() and p.suffix.lower() in ['.jpg', '.jpeg'])
         for src in files:
-            dest = IMG_DIR / f'{idx:02d}.jpg'
+            dest = IMG_DIR / f'{idx:03d}.jpg'
             if strip_and_copy(src, dest):
                 src.unlink()  # incoming'den siliyoruz
                 new_entries.append({'f': dest.name, 'k': k})
