@@ -1,5 +1,10 @@
 # Sürüm geçmişi
 
+## 0.2.1
+
+- Ayarlardaki "Yedekle" bölümü tamamen kaldırıldı: dışa/içe aktarma butonları, gizli dosya seçici, durum satırı, ilgili CSS/JS ve 6 çeviri anahtarı (TR+EN) silindi. Ayarlar panelinde DİL satırının ardından doğrudan KREDİLER geliyor.
+- Service worker önbellek anahtarı ve `lab.css` sürüm parametresi 0.2.1'e çekildi; eski önbelleğin güncellemeyi gizlemesi önlendi.
+
 ## 0.2.0 — Dev taslağı (henüz yayınlanmadı)
 
 - **Kritik görsel düzeltme:** oyun sahnesi `aspect-ratio:1` (kare) ile sabitlenmişti, ama kütüphanedeki 297 görselin tamamı 1024×768 (4:3) — bu yüzden her turda, her temada görselin üstünde/altında boş bar kalıyordu. Sahne oranı `4/3`'e çekildi (masaüstü + mobil portrait); görseller artık çerçeveyi kırpılmadan tam dolduruyor.

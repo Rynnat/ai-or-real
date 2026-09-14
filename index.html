@@ -1243,18 +1243,6 @@ html, body {
 }
 .name-error.shown { display: block; }
 
-.backup-status {
-  display: none;
-  color: var(--fg-muted);
-  font-size: 11px;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  text-align: right;
-  margin-top: -6px;
-}
-.backup-status.shown { display: block; }
-.backup-status.error { color: var(--danger); }
-
 /* reset confirm modal */
 .reset-actions {
   display: flex;
@@ -1653,7 +1641,7 @@ body.dev-mode .settings-row.dev-setting { display:grid; }
 .settings-content.hidden { display: none; }
 
 </style>
-<link rel="stylesheet" href="lab.css?v=0.2.0">
+<link rel="stylesheet" href="lab.css?v=0.2.1">
 </head>
 <body class="lab-theme">
 
@@ -1667,7 +1655,7 @@ body.dev-mode .settings-row.dev-setting { display:grid; }
     <div class="welcome-grid" id="welcome-grid">
       <div class="welcome-left">
         <div class="logo">AI <span class="or">or</span><br>REAL<span class="lab-dot">.</span></div>
-        <div class="tagline">v0.2.0</div>
+        <div class="tagline">v0.2.1</div>
         <div class="lab-ruler" aria-hidden="true"></div>
         <button class="btn-primary" id="btn-start" data-i18n="start">KLASİK</button>
         <button class="btn-endless" id="btn-endless"><span class="infinity">∞</span><span data-i18n="endless">SONSUZ MOD</span></button>
@@ -1836,15 +1824,6 @@ body.dev-mode .settings-row.dev-setting { display:grid; }
         </div>
       </div>
       <div class="settings-row">
-        <span class="settings-label" data-i18n="backup">YEDEKLE</span>
-        <div class="option-group">
-          <button class="option-btn" id="export-settings" data-i18n="backupExport">DIŞA AKTAR</button>
-          <button class="option-btn" id="import-settings" data-i18n="backupImport">İÇE AKTAR</button>
-          <input type="file" id="import-settings-file" accept="application/json" hidden>
-        </div>
-      </div>
-      <div class="backup-status" id="backup-status"></div>
-      <div class="settings-row">
         <span class="settings-label" data-i18n="credits">KREDİLER</span>
         <button class="credits-btn" id="open-credits" data-i18n="view">GÖSTER</button>
       </div>
@@ -1917,7 +1896,7 @@ const BIN_URL = ''; // Development: no connection to the original leaderboard
 const API_KEY = ''; // Never publish service credentials in client code
 const DEBUG_LABEL = false;  // test için true yap, prodda false
 const _OK = 'Xq3#zT';       // label obfuscation key
-const BUILD = 'v0.2.0';        // her push'ta bump et
+const BUILD = 'v0.2.1';        // her push'ta bump et
 
 const ROUND_DURATION_MS     = 60000;
 const COUNTDOWN_STEP_MS     = 700;
@@ -2035,12 +2014,6 @@ const I18N = {
     themeArchive:'ARCHIVE',
     themeSpectrum:'SPECTRUM',
     themeOrbit: 'ORBIT',
-    backup:       'YEDEKLE',
-    backupExport: 'DIŞA AKTAR',
-    backupImport: 'İÇE AKTAR',
-    backupOk:     'Ayarlar ve skor tablosu indirildi',
-    backupBadFile:'Dosya okunamadı ya da geçersiz',
-    backupDone:   'Yedek geri yüklendi',
     credits:    'KREDİLER',
     view:       'GÖSTER',
     cr_game:    'OYUN',
@@ -2148,12 +2121,6 @@ const I18N = {
     themeArchive:'ARCHIVE',
     themeSpectrum:'SPECTRUM',
     themeOrbit: 'ORBIT',
-    backup:       'BACKUP',
-    backupExport: 'EXPORT',
-    backupImport: 'IMPORT',
-    backupOk:     'Settings and leaderboard downloaded',
-    backupBadFile:'Could not read the file, or it is invalid',
-    backupDone:   'Backup restored',
     credits:    'CREDITS',
     view:       'VIEW',
     cr_game:    'GAME',
@@ -3853,72 +3820,6 @@ document.querySelectorAll('.color2-btn').forEach(b => {
 });
 document.querySelectorAll('.vfx-btn').forEach(b => {
   b.addEventListener('click', () => { state.vfx = b.dataset.vfx; saveSettings(); applyTheme(); sfx.click(); });
-});
-function showBackupStatus(key, isError) {
-  const el = document.getElementById('backup-status');
-  el.setAttribute('data-i18n', key);
-  el.textContent = t(key);
-  el.classList.toggle('error', !!isError);
-  el.classList.add('shown');
-  clearTimeout(showBackupStatus._t);
-  showBackupStatus._t = setTimeout(() => el.classList.remove('shown'), 3500);
-}
-document.getElementById('export-settings').addEventListener('click', () => {
-  sfx.click();
-  try {
-    const payload = {
-      app: 'ai-or-real',
-      build: BUILD,
-      exportedAt: new Date().toISOString(),
-      settings: JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY) || '{}'),
-      leaderboard: JSON.parse(localStorage.getItem(LB_STORAGE_KEY) || '[]'),
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    const stamp = payload.exportedAt.slice(0, 10);
-    a.href = url;
-    a.download = `ai-or-real-yedek-${stamp}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    showBackupStatus('backupOk', false);
-  } catch (e) {
-    showBackupStatus('backupBadFile', true);
-  }
-});
-document.getElementById('import-settings').addEventListener('click', () => {
-  sfx.click();
-  document.getElementById('import-settings-file').click();
-});
-document.getElementById('import-settings-file').addEventListener('change', async (event) => {
-  const file = event.target.files && event.target.files[0];
-  event.target.value = '';
-  if (!file) return;
-  try {
-    const text = await file.text();
-    const data = JSON.parse(text);
-    if (!data || typeof data !== 'object') throw new Error('invalid');
-    if (data.settings && typeof data.settings === 'object') {
-      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(data.settings));
-    }
-    if (Array.isArray(data.leaderboard)) {
-      localStorage.setItem(LB_STORAGE_KEY, JSON.stringify(data.leaderboard));
-    }
-    loadSettings();
-    applyLang();
-    applyTheme();
-    applyDevMode();
-    updateSoundToggle();
-    updateSoundThemeButtons();
-    await loadLeaderboard();
-    renderLeaderboard();
-    sfx.click();
-    showBackupStatus('backupDone', false);
-  } catch (e) {
-    showBackupStatus('backupBadFile', true);
-  }
 });
 document.getElementById('open-credits').addEventListener('click', () => { sfx.click(); showCredits(); });
 document.getElementById('open-tech').addEventListener('click', () => { sfx.click(); showTech(); });

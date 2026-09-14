@@ -1,10 +1,10 @@
 // AI or Real — service worker
 // Strateji: stale-while-revalidate; JSONBin çağrıları network-only
-const CACHE = 'ai-or-real-v0.2.0';
+const CACHE = 'ai-or-real-v0.2.1';
 const APP_SHELL = [
   './',
   './index.html',
-  './lab.css?v=0.2.0',
+  './lab.css?v=0.2.1',
   './manifest.json',
   './icon.svg',
   './images.json',
